@@ -269,9 +269,9 @@ const db = firebase.firestore();
 </div>
 
 <script>
-const USERS_KEY='narendra_hub_users_v1';
+const USERS_KEY='narendra_hub_users_v3';
 const SESSION_KEY='narendra_hub_session';
-const DEFAULT_USERS=[{username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false,dob:'1990-01-01'}];
+const DEFAULT_USERS=[{username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false,dob:'1990-01-01'},{username:'viewer',password:'View@123',name:'Guest Viewer',role:'viewer',status:'active',requestedEdit:false,dob:'2000-01-01'}];
 
 function getUsers(){try{const r=localStorage.getItem(USERS_KEY);if(r){const u=JSON.parse(r);if(Array.isArray(u)&&u.length>0)return u;}}catch(e){}const u=JSON.parse(JSON.stringify(DEFAULT_USERS));saveUsers(u);return u;}
 function saveUsers(u){try{localStorage.setItem(USERS_KEY,JSON.stringify(u));}catch(e){}}
