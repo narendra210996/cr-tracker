@@ -644,7 +644,7 @@ function handleImport(e){
 
 // ── Auth & Permissions ───────────────────────────────────────────────────────
 const SESSION_KEY_CR = 'narendra_hub_session';
-const USERS_KEY_CR   = 'narendra_hub_users_v1';
+const USERS_KEY_CR   = 'narendra_hub_users_v2';
 
 function getSessionCR(){ try{ return JSON.parse(localStorage.getItem(SESSION_KEY_CR)||'null'); }catch(e){return null;} }
 function getUsersCR(){ try{ const r=localStorage.getItem(USERS_KEY_CR); if(r){const u=JSON.parse(r);if(Array.isArray(u)&&u.length>0)return u;} }catch(e){} return [{username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false}]; }
