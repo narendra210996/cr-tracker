@@ -113,7 +113,15 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <div class="logo-dot"></div>
       <div class="logo-text">Narendra · Project Hub</div>
     </div>
-    <div class="top-date" id="top-date"></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="top-date" id="top-date"></div>
+      <div id="user-badge" style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:12px;">
+        <span id="user-name" style="color:var(--text);font-weight:600;"></span>
+        <span id="user-role-badge" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;"></span>
+      </div>
+      <button id="admin-btn" onclick="openAdminPanel()" style="display:none;background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;cursor:pointer;font-family:inherit;">⚙ Admin</button>
+      <button onclick="doLogout()" style="background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;cursor:pointer;font-family:inherit;">Sign out</button>
+    </div>
   </div>
 
   <div class="hero">
@@ -166,6 +174,31 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <div class="modal-btns">
       <button class="mbtn" onclick="closeModal()">Cancel</button>
       <button class="mbtn mbtn-primary" onclick="saveProject()">Add Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Panel -->
+<div class="modal-overlay" id="admin-modal" style="display:none;">
+  <div class="modal" style="width:600px;max-height:80vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div class="modal-title" style="margin-bottom:0;">⚙ Admin Panel — User Management</div>
+      <button onclick="closeAdminPanel()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;">×</button>
+    </div>
+
+    <!-- Pending Edit Requests -->
+    <div style="margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">📬 Pending Edit Access Requests</div>
+      <div id="pending-requests"></div>
+    </div>
+
+    <!-- All Users -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">👥 All Registered Users</div>
+        <div id="user-count-badge" style="font-size:11px;font-weight:700;background:var(--surface2);border:1px solid var(--border);padding:3px 10px;border-radius:20px;color:var(--text);"></div>
+      </div>
+      <div id="all-users-list"></div>
     </div>
   </div>
 </div>
@@ -326,7 +359,117 @@ function saveProject(){
 
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
 
-// Init
+// ── Auth ─────────────────────────────────────────────────────────────────────
+const SESSION_KEY = 'narendra_hub_session';
+const USERS_KEY   = 'narendra_hub_users_v1';
+
+function getSession(){ try{ return JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); }catch(e){return null;} }
+function getUsers(){ try{ const r=localStorage.getItem(USERS_KEY); if(r){const u=JSON.parse(r);if(Array.isArray(u)&&u.length>0)return u;} }catch(e){} return [{username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false}]; }
+function saveUsers(u){ try{localStorage.setItem(USERS_KEY,JSON.stringify(u));}catch(e){} }
+
+function doLogout(){
+  localStorage.removeItem(SESSION_KEY);
+  window.location.href='login.html';
+}
+
+function openAdminPanel(){
+  renderAdminPanel();
+  document.getElementById('admin-modal').style.display='flex';
+}
+function closeAdminPanel(){ document.getElementById('admin-modal').style.display='none'; }
+
+function renderAdminPanel(){
+  const users = getUsers();
+  const pending = users.filter(u=>u.requestedEdit && u.role==='viewer');
+
+  // Update count badge
+  const cb = document.getElementById('user-count-badge');
+  if(cb) cb.textContent = `${users.length} user${users.length!==1?'s':''}`;
+
+  // Pending requests
+  const pr = document.getElementById('pending-requests');
+  if(!pending.length){
+    pr.innerHTML=`<div style="font-size:12px;color:var(--muted);font-style:italic;padding:10px 0;">No pending requests</div>`;
+  } else {
+    pr.innerHTML=pending.map(u=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid #fbbf2440;border-radius:8px;padding:10px 14px;margin-bottom:8px;">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);">${u.name} <span style="font-size:11px;color:var(--muted);">@${u.username}</span></div>
+          <div style="font-size:11px;color:var(--amber);margin-top:2px;">⏳ Requesting Edit access</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="approveEdit('${u.username}')" style="font-size:11px;font-weight:600;padding:5px 12px;border-radius:6px;border:none;background:var(--green);color:#000;cursor:pointer;">✓ Approve</button>
+          <button onclick="declineEdit('${u.username}')" style="font-size:11px;font-weight:600;padding:5px 12px;border-radius:6px;border:none;background:var(--red);color:#fff;cursor:pointer;">✕ Decline</button>
+        </div>
+      </div>`).join('');
+  }
+
+  // All users — with serial number, name, username, access rights
+  const roleColor = r => r==='admin'?'var(--accent)':r==='editor'?'var(--green)':'var(--muted)';
+  const roleLabel = r => r==='admin'?'👑 Admin':r==='editor'?'✏️ Editor':'👁 Viewer';
+  const al = document.getElementById('all-users-list');
+  al.innerHTML = users.map((u,i)=>`
+    <div style="display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);min-width:20px;text-align:center;">${i+1}</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;color:var(--text);">${u.name} <span style="font-size:11px;color:var(--muted);font-weight:400;">@${u.username}</span></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+          <span style="font-size:11px;font-weight:700;color:${roleColor(u.role)};">${roleLabel(u.role)}</span>
+          ${u.requestedEdit?'<span style="font-size:10px;color:var(--amber);background:#fbbf2415;padding:2px 7px;border-radius:10px;">Edit Requested</span>':''}
+        </div>
+      </div>
+      ${u.username==='Narendra'
+        ? '<span style="font-size:10px;color:var(--accent);font-weight:700;background:#4f8ef722;padding:3px 10px;border-radius:10px;">YOU</span>'
+        : `<div style="display:flex;gap:6px;align-items:center;">
+            <select onchange="changeRole('${u.username}',this.value)" style="font-size:11px;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;">
+              <option value="viewer" ${u.role==='viewer'?'selected':''}>Viewer</option>
+              <option value="editor" ${u.role==='editor'?'selected':''}>Editor</option>
+              <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+            </select>
+            <button onclick="adminResetPassword('${u.username}')" style="font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--amber);cursor:pointer;">🔑 Reset</button>
+          </div>`}
+    </div>`).join('');
+}
+
+function approveEdit(username){
+  const users=getUsers();
+  const u=users.find(x=>x.username===username);
+  if(u){u.role='editor';u.requestedEdit=false;}
+  saveUsers(users); renderAdminPanel(); toast('✓ Edit access granted to '+username);
+}
+function declineEdit(username){
+  const users=getUsers();
+  const u=users.find(x=>x.username===username);
+  if(u){u.requestedEdit=false;}
+  saveUsers(users); renderAdminPanel(); toast('✕ Request declined for '+username);
+}
+function changeRole(username, newRole){
+  const users=getUsers();
+  const u=users.find(x=>x.username===username);
+  if(u){u.role=newRole; if(newRole==='editor'||newRole==='admin') u.requestedEdit=false;}
+  saveUsers(users); renderAdminPanel(); toast('✓ Role updated for '+username);
+}
+function adminResetPassword(username){
+  const newPass = prompt(`Set new password for @${username}:`);
+  if(!newPass) return;
+  if(newPass.length<6){ toast('⚠ Password must be at least 6 characters'); return; }
+  const users=getUsers();
+  const u=users.find(x=>x.username===username);
+  if(u){ u.password=newPass; saveUsers(users); toast('✓ Password reset for '+username); }
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+// Check session
+const session = getSession();
+if(!session || !session.username){ window.location.href='login.html'; }
+
+// Show user info
+const userBadge = document.getElementById('user-role-badge');
+document.getElementById('user-name').textContent = session.name || session.username;
+if(session.role==='admin'){ userBadge.textContent='Admin'; userBadge.style.background='#4f8ef733'; userBadge.style.color='var(--accent)'; document.getElementById('admin-btn').style.display='block'; }
+else if(session.role==='editor'){ userBadge.textContent='Editor'; userBadge.style.background='#34d39933'; userBadge.style.color='var(--green)'; }
+else { userBadge.textContent='Viewer'; userBadge.style.background='#6b728033'; userBadge.style.color='var(--muted)'; }
+
 loadProjects();
 document.getElementById('top-date').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short',year:'numeric'});
 renderProjects();

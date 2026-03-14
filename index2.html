@@ -169,10 +169,16 @@ tbody tr.sel{background:#eff6ff;}
     </div>
   </div>
   <div class="hdr-actions">
+    <div id="user-info-bar" style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1.5px solid var(--border);padding:6px 12px;border-radius:8px;font-size:12px;">
+      <span id="cr-user-name" style="font-weight:600;color:var(--text);"></span>
+      <span id="cr-user-role" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;"></span>
+    </div>
+    <button id="req-edit-btn" onclick="requestEditAccess()" style="display:none;" class="btn">🔓 Request Edit Access</button>
     <button class="btn btn-green" onclick="exportCSV()">⬇ Export to Excel</button>
     <button class="btn" onclick="importJSON()">📂 Import Backup</button>
     <button class="btn" onclick="exportJSON()">💾 Save Backup</button>
-    <button class="btn btn-primary" onclick="toggleAddForm()">+ New CR</button>
+    <button id="new-cr-btn" class="btn btn-primary" onclick="toggleAddForm()">+ New CR</button>
+    <button onclick="doLogout()" class="btn">Sign out</button>
   </div>
 </div>
 
@@ -618,6 +624,51 @@ function handleImport(e){
   reader.readAsText(file); e.target.value='';
 }
 
+// ── Auth & Permissions ───────────────────────────────────────────────────────
+const SESSION_KEY_CR = 'narendra_hub_session';
+const USERS_KEY_CR   = 'narendra_hub_users_v1';
+
+function getSessionCR(){ try{ return JSON.parse(localStorage.getItem(SESSION_KEY_CR)||'null'); }catch(e){return null;} }
+function getUsersCR(){ try{ const r=localStorage.getItem(USERS_KEY_CR); if(r){const u=JSON.parse(r);if(Array.isArray(u)&&u.length>0)return u;} }catch(e){} return [{username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false}]; }
+function saveUsersCR(u){ try{localStorage.setItem(USERS_KEY_CR,JSON.stringify(u));}catch(e){} }
+
+function doLogout(){ localStorage.removeItem(SESSION_KEY_CR); window.location.href='login.html'; }
+
+function requestEditAccess(){
+  const s = getSessionCR();
+  const users = getUsersCR();
+  const u = users.find(x=>x.username===s.username);
+  if(u){ u.requestedEdit=true; saveUsersCR(users); }
+  document.getElementById('req-edit-btn').textContent='⏳ Request Sent';
+  document.getElementById('req-edit-btn').disabled=true;
+  toast('✓ Edit access request sent to Admin');
+}
+
+function applyPermissions(role){
+  const canEdit = role==='admin' || role==='editor';
+  // Hide/show edit controls
+  ['new-cr-btn','req-edit-btn'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    if(id==='new-cr-btn') el.style.display = canEdit?'inline-flex':'none';
+    if(id==='req-edit-btn'){
+      const s=getSessionCR();
+      const users=getUsersCR();
+      const u=users.find(x=>x.username===s.username);
+      if(!canEdit){
+        el.style.display='inline-flex';
+        if(u&&u.requestedEdit){ el.textContent='⏳ Request Sent'; el.disabled=true; }
+      }
+    }
+  });
+  // Hide save/delete/edit buttons if viewer — we do this after render via CSS
+  if(!canEdit){
+    const style=document.createElement('style');
+    style.textContent='.edit-wrap{display:none!important;}.btn-delete{display:none!important;}.doc-upload-row{display:none!important;}';
+    document.head.appendChild(style);
+  }
+}
+
 // Init
 // Set page title based on active project
 if(activeProject && activeProject.name){
@@ -636,6 +687,18 @@ if(!loaded){
 document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 renderStagePills();
 renderTable();
+
+// Apply session + permissions
+const crSession = getSessionCR();
+if(!crSession || !crSession.username){ window.location.href='login.html'; }
+else {
+  document.getElementById('cr-user-name').textContent = crSession.name || crSession.username;
+  const rb = document.getElementById('cr-user-role');
+  if(crSession.role==='admin'){ rb.textContent='Admin'; rb.style.background='#4f8ef733'; rb.style.color='#4f8ef7'; }
+  else if(crSession.role==='editor'){ rb.textContent='Editor'; rb.style.background='#34d39933'; rb.style.color='#34d399'; }
+  else { rb.textContent='Viewer'; rb.style.background='#6b728033'; rb.style.color='#6b7280'; }
+  applyPermissions(crSession.role);
+}
 </script>
 </body>
 </html>
