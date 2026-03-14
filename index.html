@@ -196,7 +196,7 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 
 <div class="toast" id="toast"></div>
 
-<script>
+<script type="module">
 const PROJ_KEY = 'narendra_projects_v1';
 
 const DEFAULT_PROJECTS = [
@@ -355,7 +355,12 @@ const SESSION_KEY = 'narendra_hub_session';
 const USERS_KEY   = 'narendra_hub_users_v2';
 
 function getSession(){ try{ return JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); }catch(e){return null;} }
-function getUsers(){ try{ const r=localStorage.getItem(USERS_KEY); if(r){const u=JSON.parse(r);if(Array.isArray(u)&&u.length>0)return u;} }catch(e){} return [{username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false}]; }
+function getUsers(){
+  let users=[];
+  try{ const r=localStorage.getItem(USERS_KEY); if(r){const u=JSON.parse(r);if(Array.isArray(u)&&u.length>0)users=u;} }catch(e){}
+  DEFAULT_USERS.forEach(def=>{ if(!users.find(u=>u.username===def.username)) users.push(JSON.parse(JSON.stringify(def))); });
+  saveUsers(users); return users;
+}catch(e){} return [{username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false}]; }
 function saveUsers(u){ try{localStorage.setItem(USERS_KEY,JSON.stringify(u));}catch(e){} }
 
 function doLogout(){
@@ -369,16 +374,19 @@ function openAdminPanel(){
 }
 function closeAdminPanel(){ document.getElementById('admin-modal').style.display='none'; }
 
-function renderAdminPanel(){
-  const users = getUsers();
-  const pending = users.filter(u=>u.requestedEdit && u.role==='viewer');
-
-  // Update count badge
+async function renderAdminPanel(){
+  const pr = document.getElementById('pending-requests');
+  const al = document.getElementById('all-users-list');
   const cb = document.getElementById('user-count-badge');
+  pr.innerHTML = `<div style="font-size:12px;color:var(--muted);padding:10px 0;">Loading...</div>`;
+  al.innerHTML = `<div style="font-size:12px;color:var(--muted);padding:10px 0;">Loading...</div>`;
+
+  const users = await getAllUsers();
+  const pending = users.filter(u=>u.requestedEdit && u.role==='viewer');
+  const session = getSession();
+
   if(cb) cb.textContent = `${users.length} user${users.length!==1?'s':''}`;
 
-  // Pending requests
-  const pr = document.getElementById('pending-requests');
   if(!pending.length){
     pr.innerHTML=`<div style="font-size:12px;color:var(--muted);font-style:italic;padding:10px 0;">No pending requests</div>`;
   } else {
@@ -395,10 +403,8 @@ function renderAdminPanel(){
       </div>`).join('');
   }
 
-  // All users — with serial number, name, username, access rights
   const roleColor = r => r==='admin'?'var(--accent)':r==='editor'?'var(--green)':'var(--muted)';
   const roleLabel = r => r==='admin'?'👑 Admin':r==='editor'?'✏️ Editor':'👁 Viewer';
-  const al = document.getElementById('all-users-list');
   al.innerHTML = users.map((u,i)=>`
     <div style="display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;">
       <div style="font-size:12px;font-weight:700;color:var(--muted);min-width:20px;text-align:center;">${i+1}</div>
@@ -409,8 +415,8 @@ function renderAdminPanel(){
           ${u.requestedEdit?'<span style="font-size:10px;color:var(--amber);background:#fbbf2415;padding:2px 7px;border-radius:10px;">Edit Requested</span>':''}
         </div>
       </div>
-      ${u.username==='Narendra'
-        ? '<span style="font-size:10px;color:var(--accent);font-weight:700;background:#4f8ef722;padding:3px 10px;border-radius:10px;">YOU</span>'
+      ${u.username===session.username
+        ? '<span style="font-size:10px;color:var(--accent);font-weight:700;background:#eff6ff;padding:3px 10px;border-radius:10px;">YOU</span>'
         : `<div style="display:flex;gap:6px;align-items:center;">
             <select onchange="changeRole('${u.username}',this.value)" style="font-size:11px;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;">
               <option value="viewer" ${u.role==='viewer'?'selected':''}>Viewer</option>
@@ -422,44 +428,37 @@ function renderAdminPanel(){
     </div>`).join('');
 }
 
-function approveEdit(username){
-  const users=getUsers();
-  const u=users.find(x=>x.username===username);
-  if(u){u.role='editor';u.requestedEdit=false;}
-  saveUsers(users); renderAdminPanel(); toast('✓ Edit access granted to '+username);
+async function approveEdit(username){
+  await updateUser(username, {role:'editor', requestedEdit:false});
+  renderAdminPanel(); toast('✓ Edit access granted to '+username);
 }
-function declineEdit(username){
-  const users=getUsers();
-  const u=users.find(x=>x.username===username);
-  if(u){u.requestedEdit=false;}
-  saveUsers(users); renderAdminPanel(); toast('✕ Request declined for '+username);
+async function declineEdit(username){
+  await updateUser(username, {requestedEdit:false});
+  renderAdminPanel(); toast('✕ Request declined for '+username);
 }
-function changeRole(username, newRole){
-  const users=getUsers();
-  const u=users.find(x=>x.username===username);
-  if(u){u.role=newRole; if(newRole==='editor'||newRole==='admin') u.requestedEdit=false;}
-  saveUsers(users); renderAdminPanel(); toast('✓ Role updated for '+username);
+async function changeRole(username, newRole){
+  const data = {role:newRole};
+  if(newRole==='editor'||newRole==='admin') data.requestedEdit=false;
+  await updateUser(username, data);
+  renderAdminPanel(); toast('✓ Role updated for '+username);
 }
-function adminResetPassword(username){
+async function adminResetPassword(username){
   const newPass = prompt(`Set new password for @${username}:`);
   if(!newPass) return;
   if(newPass.length<6){ toast('⚠ Password must be at least 6 characters'); return; }
-  const users=getUsers();
-  const u=users.find(x=>x.username===username);
-  if(u){ u.password=newPass; saveUsers(users); toast('✓ Password reset for '+username); }
+  await updateUser(username, {password:newPass});
+  toast('✓ Password reset for '+username);
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
-// Check session
 const session = getSession();
 if(!session || !session.username){ window.location.href='login.html'; }
 
-// Show user info
 const userBadge = document.getElementById('user-role-badge');
 document.getElementById('user-name').textContent = session.name || session.username;
-if(session.role==='admin'){ userBadge.textContent='Admin'; userBadge.style.background='#4f8ef733'; userBadge.style.color='var(--accent)'; document.getElementById('admin-btn').style.display='block'; }
-else if(session.role==='editor'){ userBadge.textContent='Editor'; userBadge.style.background='#34d39933'; userBadge.style.color='var(--green)'; }
-else { userBadge.textContent='Viewer'; userBadge.style.background='#6b728033'; userBadge.style.color='var(--muted)'; }
+if(session.role==='admin'){ userBadge.textContent='Admin'; userBadge.style.background='#eff6ff'; userBadge.style.color='var(--accent)'; document.getElementById('admin-btn').style.display='block'; }
+else if(session.role==='editor'){ userBadge.textContent='Editor'; userBadge.style.background='#f0fdf4'; userBadge.style.color='var(--green)'; }
+else { userBadge.textContent='Viewer'; userBadge.style.background='#f8fafc'; userBadge.style.color='var(--muted)'; }
 
 loadProjects();
 document.getElementById('top-date').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short',year:'numeric'});

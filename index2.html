@@ -293,7 +293,7 @@ tbody tr.sel{background:#eff6ff;}
 
 <input type="file" id="file-import" accept=".json" style="display:none;" onchange="handleImport(event)"/>
 
-<script>
+<script type="module">
 const STAGES    = ['Requirement Gathering','Vendor Data Submission','Development','QA / Testing','UAT','Go Live'];
 const STAGE_SH  = ['Req','Vendor','Dev','QA','UAT','Go Live'];
 const STAGE_IDX = Object.fromEntries(STAGES.map((s,i)=>[s,i]));
@@ -353,21 +353,21 @@ let CRS = [];
 let selId = null;
 let activeStageFilter = null;
 
-function saveToStorage(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(CRS)); }catch(e){}
-}
-function loadFromStorage(){
+async function saveToStorage(){
   try{
-    // Clear all old keys
-    ['vatsal_cr_tracker_v1','vatsal_cr_tracker_v2','vatsal_cr_tracker_v3'].forEach(k=>{
-      try{localStorage.removeItem(k);}catch(e){}
-    });
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){
-      const parsed = JSON.parse(raw);
-      if(Array.isArray(parsed) && parsed.length > 0){ CRS = parsed; return true; }
+    const projectId = activeProject.id || 'rms';
+    await setDoc(doc(db, 'projects', projectId), {crs: CRS, updatedAt: new Date().toISOString()});
+  }catch(e){ console.error('Save error:', e); }
+}
+async function loadFromStorage(){
+  try{
+    const projectId = activeProject.id || 'rms';
+    const snap = await getDoc(doc(db, 'projects', projectId));
+    if(snap.exists() && snap.data().crs && snap.data().crs.length > 0){
+      CRS = snap.data().crs;
+      return true;
     }
-  }catch(e){}
+  }catch(e){ console.error('Load error:', e); }
   return false;
 }
 
@@ -647,7 +647,16 @@ const SESSION_KEY_CR = 'narendra_hub_session';
 const USERS_KEY_CR   = 'narendra_hub_users_v2';
 
 function getSessionCR(){ try{ return JSON.parse(localStorage.getItem(SESSION_KEY_CR)||'null'); }catch(e){return null;} }
-function getUsersCR(){ try{ const r=localStorage.getItem(USERS_KEY_CR); if(r){const u=JSON.parse(r);if(Array.isArray(u)&&u.length>0)return u;} }catch(e){} return [{username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false}]; }
+function getUsersCR(){
+  const DEFAULT_USERS_CR=[
+    {username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false,dob:'1990-01-01'},
+    {username:'viewer',password:'View@123',name:'Guest Viewer',role:'viewer',status:'active',requestedEdit:false,dob:'2000-01-01'}
+  ];
+  let users=[];
+  try{ const r=localStorage.getItem(USERS_KEY_CR); if(r){const u=JSON.parse(r);if(Array.isArray(u)&&u.length>0)users=u;} }catch(e){}
+  DEFAULT_USERS_CR.forEach(def=>{ if(!users.find(u=>u.username===def.username)) users.push(JSON.parse(JSON.stringify(def))); });
+  saveUsersCR(users); return users;
+}
 function saveUsersCR(u){ try{localStorage.setItem(USERS_KEY_CR,JSON.stringify(u));}catch(e){} }
 
 function doLogout(){ localStorage.removeItem(SESSION_KEY_CR); window.location.href='login.html'; }
@@ -687,36 +696,38 @@ function applyPermissions(role){
   }
 }
 
-// Init
-// Set page title based on active project
+// ── Init (async) ─────────────────────────────────────────────────────────────
+const crSession = getSessionCR();
+if(!crSession || !crSession.username){ window.location.href='login.html'; }
+
+// Show user info
+document.getElementById('cr-user-name').textContent = crSession.name || crSession.username;
+const rb = document.getElementById('cr-user-role');
+if(crSession.role==='admin'){ rb.textContent='Admin'; rb.style.background='#eff6ff'; rb.style.color='var(--accent)'; }
+else if(crSession.role==='editor'){ rb.textContent='Editor'; rb.style.background='#f0fdf4'; rb.style.color='var(--green)'; }
+else { rb.textContent='Viewer'; rb.style.background='#f8fafc'; rb.style.color='var(--muted)'; }
+applyPermissions(crSession.role);
+
+// Set page title
 if(activeProject && activeProject.name){
   document.getElementById('page-title').textContent = activeProject.icon+' '+activeProject.name;
   document.getElementById('hdr-project').textContent = activeProject.name+' Feature Development';
   document.title = activeProject.name+' — CR Tracker';
 }
+document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
-// For non-RMS projects, don't load default Risk CRs — start fresh
+// Show loading state
+document.getElementById('cr-tbody').innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">⏳ Loading CRs...</td></tr>`;
+
+// Load CRs from Firebase
 const isRMS = !activeProject.id || activeProject.id === 'rms';
-const loaded=loadFromStorage();
+const loaded = await loadFromStorage();
 if(!loaded){
   CRS = isRMS ? JSON.parse(JSON.stringify(DEFAULT_CRS)) : [];
-  saveToStorage();
+  await saveToStorage();
 }
-document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 renderStagePills();
 renderTable();
-
-// Apply session + permissions
-const crSession = getSessionCR();
-if(!crSession || !crSession.username){ window.location.href='login.html'; }
-else {
-  document.getElementById('cr-user-name').textContent = crSession.name || crSession.username;
-  const rb = document.getElementById('cr-user-role');
-  if(crSession.role==='admin'){ rb.textContent='Admin'; rb.style.background='#4f8ef733'; rb.style.color='#4f8ef7'; }
-  else if(crSession.role==='editor'){ rb.textContent='Editor'; rb.style.background='#34d39933'; rb.style.color='#34d399'; }
-  else { rb.textContent='Viewer'; rb.style.background='#6b728033'; rb.style.color='#6b7280'; }
-  applyPermissions(crSession.role);
-}
 </script>
 </body>
 </html>

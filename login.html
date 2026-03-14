@@ -10,23 +10,18 @@
 :root{
   --bg:#f5f7fa;--surface:#ffffff;--border:#e8ecf1;--border2:#d1d9e0;
   --text:#1a1f2e;--muted:#8492a6;--accent:#2563eb;--accent2:#1d4ed8;
-  --green:#16a34a;--red:#dc2626;--amber:#d97706;
+  --green:#16a34a;--amber:#d97706;--red:#dc2626;
   --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.06);
   --shadow2:0 2px 8px rgba(37,99,235,.18);
 }
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
-
-/* Subtle dot pattern */
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
 body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle,#cbd5e1 1px,transparent 1px);background-size:28px 28px;opacity:.45;pointer-events:none;}
-
 .wrap{position:relative;z-index:1;display:flex;width:880px;max-width:100%;min-height:560px;border-radius:24px;overflow:hidden;box-shadow:0 8px 48px rgba(0,0,0,.12);}
-
-/* Left panel */
 .left{width:340px;flex-shrink:0;background:linear-gradient(160deg,#1e40af 0%,#2563eb 50%,#3b82f6 100%);padding:48px 36px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;}
 .left::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.06);}
 .left::after{content:'';position:absolute;bottom:-40px;left:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.06);}
 .brand{position:relative;z-index:1;}
-.brand-icon{width:44px;height:44px;background:rgba(255,255,255,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;backdrop-filter:blur(8px);}
+.brand-icon{width:44px;height:44px;background:rgba(255,255,255,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;}
 .brand-icon svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2;}
 .brand-title{font-size:22px;font-weight:700;color:#fff;line-height:1.25;margin-bottom:10px;}
 .brand-sub{font-size:13px;color:rgba(255,255,255,.7);line-height:1.65;}
@@ -34,78 +29,53 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 .feat{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
 .feat-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.5);flex-shrink:0;}
 .feat-txt{font-size:12px;color:rgba(255,255,255,.75);font-weight:500;}
-
-/* Right panel */
-.right{flex:1;background:var(--surface);padding:44px 40px;display:flex;flex-direction:column;justify-content:center;overflow-y:auto;}
-
-.tab-row{display:flex;gap:0;margin-bottom:28px;background:var(--bg);border-radius:10px;padding:4px;border:1px solid var(--border);}
-.tab{flex:1;text-align:center;padding:8px 6px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-radius:7px;transition:all .18s;letter-spacing:.01em;}
+.right{flex:1;background:#fff;padding:44px 40px;display:flex;flex-direction:column;justify-content:center;overflow-y:auto;}
+.tab-row{display:flex;gap:0;margin-bottom:24px;background:var(--bg);border-radius:10px;padding:4px;border:1px solid var(--border);}
+.tab{flex:1;text-align:center;padding:8px 6px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;border-radius:7px;transition:all .18s;}
 .tab.active{background:#fff;color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.08);}
-
-h2{font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;}
-.sub{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.55;}
-
-.field{margin-bottom:14px;}
+h2{font-size:19px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.sub{font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.55;}
+.field{margin-bottom:12px;}
 .field label{font-size:11px;font-weight:600;color:var(--text);letter-spacing:.04em;display:block;margin-bottom:5px;text-transform:uppercase;}
 .input-wrap{position:relative;}
 .input-wrap .icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none;}
 .field input,.field select{width:100%;font-size:13px;padding:10px 13px 10px 36px;border:1.5px solid var(--border);border-radius:9px;background:#fff;color:var(--text);outline:none;font-family:inherit;transition:border .15s,box-shadow .15s;}
 .field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
-.field input.no-icon,.field select.no-icon{padding-left:13px;}
+.field input.no-icon{padding-left:13px;}
 .field select{padding-left:13px;color-scheme:light;}
-.field select option{background:#fff;}
-
-.btn-main{width:100%;padding:11px;font-size:14px;font-weight:600;background:var(--accent);color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit;transition:all .18s;margin-top:4px;letter-spacing:.01em;}
+.btn-main{width:100%;padding:11px;font-size:14px;font-weight:600;background:var(--accent);color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit;transition:all .18s;margin-top:4px;}
 .btn-main:hover{background:var(--accent2);box-shadow:var(--shadow2);}
-.btn-main:active{transform:scale(.99);}
-
-.err{font-size:12px;color:var(--red);background:#fef2f2;border:1px solid #fecaca;padding:9px 12px;border-radius:8px;margin-bottom:14px;display:none;}
+.err{font-size:12px;color:var(--red);background:#fef2f2;border:1px solid #fecaca;padding:9px 12px;border-radius:8px;margin-bottom:12px;display:none;}
 .err.show{display:block;}
-.suc{font-size:12px;color:var(--green);background:#f0fdf4;border:1px solid #bbf7d0;padding:9px 12px;border-radius:8px;margin-bottom:14px;display:none;}
+.suc{font-size:12px;color:var(--green);background:#f0fdf4;border:1px solid #bbf7d0;padding:9px 12px;border-radius:8px;margin-bottom:12px;display:none;}
 .suc.show{display:block;}
-
 .link-btn{background:none;border:none;color:var(--accent);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:10px;display:block;text-align:center;width:100%;}
-.link-btn:hover{text-decoration:underline;color:var(--accent2);}
-
-.divider{display:flex;align-items:center;gap:10px;margin:6px 0 14px;}
-.divider span{font-size:11px;color:var(--muted);}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
-
-/* Rights selector */
+.link-btn:hover{text-decoration:underline;}
 .rights-row{display:flex;gap:8px;}
 .right-opt{flex:1;padding:10px 8px;border:1.5px solid var(--border);border-radius:9px;text-align:center;cursor:pointer;transition:all .15s;background:#fff;}
-.right-opt:hover{border-color:var(--border2);}
 .right-opt.active-view{border-color:var(--accent);background:#eff6ff;}
 .right-opt.active-edit{border-color:var(--green);background:#f0fdf4;}
 .right-opt .ro-icon{font-size:18px;margin-bottom:4px;}
 .right-opt .ro-label{font-size:12px;font-weight:600;color:var(--text);}
 .right-opt .ro-sub{font-size:10px;color:var(--muted);margin-top:2px;}
-
-/* Step indicator for forgot */
 .steps{display:flex;align-items:center;gap:6px;margin-bottom:22px;}
 .step{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2px solid var(--border);color:var(--muted);background:#fff;}
 .step.done{background:var(--green);border-color:var(--green);color:#fff;}
 .step.active{background:var(--accent);border-color:var(--accent);color:#fff;}
 .step-line{flex:1;height:2px;background:var(--border);border-radius:1px;}
 .step-line.done{background:var(--green);}
-
-@media(max-width:640px){
-  .wrap{flex-direction:column;border-radius:16px;}
-  .left{width:100%;padding:28px 24px;min-height:auto;}
-  .brand-features{display:none;}
-  .right{padding:28px 24px;}
-}
+.loading{display:none;text-align:center;padding:20px;color:var(--muted);font-size:13px;}
+.loading.show{display:block;}
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:8px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+@media(max-width:640px){.wrap{flex-direction:column;border-radius:16px;}.left{width:100%;padding:28px 24px;min-height:auto;}.brand-features{display:none;}.right{padding:28px 24px;}}
 </style>
 </head>
 <body>
 <div class="wrap">
-
-  <!-- Left panel -->
   <div class="left">
     <div class="brand">
-      <div class="brand-icon">
-        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-      </div>
+      <div class="brand-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
       <div class="brand-title">Project Hub</div>
       <div class="brand-sub">Narendra's unified dashboard for tracking CRs, progress and team collaboration.</div>
     </div>
@@ -113,17 +83,15 @@ h2{font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;}
       <div class="feat"><div class="feat-dot"></div><div class="feat-txt">Track CRs across all projects</div></div>
       <div class="feat"><div class="feat-dot"></div><div class="feat-txt">Stage-wise progress visibility</div></div>
       <div class="feat"><div class="feat-dot"></div><div class="feat-txt">Role-based access control</div></div>
-      <div class="feat"><div class="feat-dot"></div><div class="feat-txt">Attach documents to any CR</div></div>
+      <div class="feat"><div class="feat-dot"></div><div class="feat-txt">Real-time sync across all devices</div></div>
       <div class="feat"><div class="feat-dot"></div><div class="feat-txt">Notes & follow-up log per CR</div></div>
     </div>
   </div>
-
-  <!-- Right panel -->
   <div class="right">
     <div class="tab-row">
-      <div class="tab active" id="tab-login"  onclick="showTab('login')">Sign In</div>
-      <div class="tab"        id="tab-reg"    onclick="showTab('register')">Register</div>
-      <div class="tab"        id="tab-forgot" onclick="showTab('forgot')">Forgot Password</div>
+      <div class="tab active" id="tab-login" onclick="showTab('login')">Sign In</div>
+      <div class="tab" id="tab-reg" onclick="showTab('register')">Register</div>
+      <div class="tab" id="tab-forgot" onclick="showTab('forgot')">Forgot Password</div>
     </div>
 
     <!-- LOGIN -->
@@ -131,15 +99,10 @@ h2{font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;}
       <h2>Welcome back 👋</h2>
       <div class="sub">Sign in to access your Project Dashboard.</div>
       <div class="err" id="login-err"></div>
-      <div class="field">
-        <label>Username</label>
-        <div class="input-wrap"><span class="icon">👤</span><input type="text" id="l-user" placeholder="Enter your username"/></div>
-      </div>
-      <div class="field">
-        <label>Password</label>
-        <div class="input-wrap"><span class="icon">🔒</span><input type="password" id="l-pass" placeholder="Enter your password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
-      </div>
-      <button class="btn-main" onclick="doLogin()">Sign In →</button>
+      <div class="loading" id="login-loading"><div class="spinner"></div><br>Signing you in...</div>
+      <div class="field"><label>Username</label><div class="input-wrap"><span class="icon">👤</span><input type="text" id="l-user" placeholder="Enter your username"/></div></div>
+      <div class="field"><label>Password</label><div class="input-wrap"><span class="icon">🔒</span><input type="password" id="l-pass" placeholder="Enter your password" onkeydown="if(event.key==='Enter')doLogin()"/></div></div>
+      <button class="btn-main" id="login-btn" onclick="doLogin()">Sign In →</button>
       <button class="link-btn" onclick="showTab('forgot')">Forgot your password?</button>
     </div>
 
@@ -149,122 +112,93 @@ h2{font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;}
       <div class="sub">View access is instant. Edit access requires Admin approval.</div>
       <div class="err" id="reg-err"></div>
       <div class="suc" id="reg-suc"></div>
+      <div class="loading" id="reg-loading"><div class="spinner"></div><br>Creating your account...</div>
+      <div class="field"><label>Full Name</label><div class="input-wrap"><span class="icon">👤</span><input type="text" id="r-name" placeholder="Your full name"/></div></div>
+      <div class="field"><label>Username</label><div class="input-wrap"><span class="icon">@</span><input type="text" id="r-user" placeholder="Choose a username"/></div></div>
+      <div class="field"><label>Password</label><div class="input-wrap"><span class="icon">🔒</span><input type="password" id="r-pass" placeholder="Min 6 characters"/></div></div>
       <div class="field">
-        <label>Full Name</label>
-        <div class="input-wrap"><span class="icon">👤</span><input type="text" id="r-name" placeholder="Your full name"/></div>
-      </div>
-      <div class="field">
-        <label>Username</label>
-        <div class="input-wrap"><span class="icon">@</span><input type="text" id="r-user" placeholder="Choose a username"/></div>
-      </div>
-      <div class="field">
-        <label>Password</label>
-        <div class="input-wrap"><span class="icon">🔒</span><input type="password" id="r-pass" placeholder="Min 6 characters"/></div>
-      </div>
-      <div class="field">
-        <label>Date of Birth <span style="color:var(--muted);font-weight:400;text-transform:none;font-size:10px;">(used for password reset)</span></label>
-        <input type="date" id="r-dob" class="no-icon" style="width:100%;font-size:13px;padding:10px 13px;border:1.5px solid var(--border);border-radius:9px;background:#fff;color:var(--text);outline:none;font-family:inherit;transition:border .15s,box-shadow .15s;"/>
+        <label>Date of Birth <span style="color:var(--muted);font-weight:400;text-transform:none;font-size:10px;">(for password reset)</span></label>
+        <input type="date" id="r-dob" class="no-icon" style="width:100%;font-size:13px;padding:10px 13px;border:1.5px solid var(--border);border-radius:9px;background:#fff;color:var(--text);outline:none;font-family:inherit;cursor:pointer;"/>
       </div>
       <div class="field">
         <label>Access Rights</label>
         <div class="rights-row">
-          <div class="right-opt active-view" id="r-view" onclick="selectRight('viewer')">
-            <div class="ro-icon">👁</div>
-            <div class="ro-label">View</div>
-            <div class="ro-sub">Read only</div>
-          </div>
-          <div class="right-opt" id="r-edit" onclick="selectRight('editor')">
-            <div class="ro-icon">✏️</div>
-            <div class="ro-label">Edit</div>
-            <div class="ro-sub">Needs approval</div>
-          </div>
+          <div class="right-opt active-view" id="r-view" onclick="selectRight('viewer')"><div class="ro-icon">👁</div><div class="ro-label">View</div><div class="ro-sub">Read only</div></div>
+          <div class="right-opt" id="r-edit" onclick="selectRight('editor')"><div class="ro-icon">✏️</div><div class="ro-label">Edit</div><div class="ro-sub">Needs approval</div></div>
         </div>
       </div>
-      <div id="edit-notice" style="display:none;font-size:11px;color:var(--amber);background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:8px 10px;margin-bottom:12px;">
-        ⏳ Edit access pending — Admin must approve before you can make changes.
-      </div>
-      <button class="btn-main" onclick="doRegister()">Create Account →</button>
+      <div id="edit-notice" style="display:none;font-size:11px;color:var(--amber);background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:8px 10px;margin-bottom:12px;">⏳ Edit access pending — Admin must approve before you can make changes.</div>
+      <button class="btn-main" id="reg-btn" onclick="doRegister()">Create Account →</button>
     </div>
 
     <!-- FORGOT PASSWORD -->
     <div id="pane-forgot" style="display:none;">
-      <!-- Step 1 -->
       <div id="fp-step1">
         <h2>Reset Password</h2>
         <div class="sub">Enter your username to find your account.</div>
-        <div class="steps">
-          <div class="step active">1</div>
-          <div class="step-line"></div>
-          <div class="step">2</div>
-          <div class="step-line"></div>
-          <div class="step">3</div>
-        </div>
+        <div class="steps"><div class="step active">1</div><div class="step-line"></div><div class="step">2</div><div class="step-line"></div><div class="step">3</div></div>
         <div class="err" id="fp-err1"></div>
-        <div class="field">
-          <label>Username</label>
-          <div class="input-wrap"><span class="icon">👤</span><input type="text" id="fp-user" placeholder="Enter your username"/></div>
-        </div>
+        <div class="field"><label>Username</label><div class="input-wrap"><span class="icon">👤</span><input type="text" id="fp-user" placeholder="Enter your username"/></div></div>
         <button class="btn-main" onclick="fpStep1()">Continue →</button>
         <button class="link-btn" onclick="showTab('login')">← Back to Login</button>
       </div>
-      <!-- Step 2 -->
       <div id="fp-step2" style="display:none;">
         <h2>Verify Identity</h2>
         <div class="sub">Enter your Date of Birth to confirm it's you.</div>
-        <div class="steps">
-          <div class="step done">✓</div>
-          <div class="step-line done"></div>
-          <div class="step active">2</div>
-          <div class="step-line"></div>
-          <div class="step">3</div>
-        </div>
+        <div class="steps"><div class="step done">✓</div><div class="step-line done"></div><div class="step active">2</div><div class="step-line"></div><div class="step">3</div></div>
         <div class="err" id="fp-err2"></div>
-        <div class="field">
-          <label>Date of Birth</label>
-          <input type="date" id="fp-dob" class="no-icon" style="width:100%;font-size:13px;padding:10px 13px;border:1.5px solid var(--border);border-radius:9px;background:#fff;color:var(--text);outline:none;font-family:inherit;transition:border .15s,box-shadow .15s;"/>
-        </div>
+        <div class="field"><label>Date of Birth</label><input type="date" id="fp-dob" style="width:100%;font-size:13px;padding:10px 13px;border:1.5px solid var(--border);border-radius:9px;background:#fff;color:var(--text);outline:none;font-family:inherit;cursor:pointer;"/></div>
         <button class="btn-main" onclick="fpStep2()">Verify →</button>
         <button class="link-btn" onclick="fpBack()">← Back</button>
       </div>
-      <!-- Step 3 -->
       <div id="fp-step3" style="display:none;">
         <h2>Set New Password</h2>
         <div class="sub">Almost done! Choose your new password.</div>
-        <div class="steps">
-          <div class="step done">✓</div>
-          <div class="step-line done"></div>
-          <div class="step done">✓</div>
-          <div class="step-line done"></div>
-          <div class="step active">3</div>
-        </div>
+        <div class="steps"><div class="step done">✓</div><div class="step-line done"></div><div class="step done">✓</div><div class="step-line done"></div><div class="step active">3</div></div>
         <div class="err" id="fp-err3"></div>
         <div class="suc" id="fp-suc3"></div>
-        <div class="field">
-          <label>New Password</label>
-          <div class="input-wrap"><span class="icon">🔒</span><input type="password" id="fp-newpass" placeholder="Min 6 characters"/></div>
-        </div>
-        <div class="field">
-          <label>Confirm Password</label>
-          <div class="input-wrap"><span class="icon">🔒</span><input type="password" id="fp-confpass" placeholder="Repeat new password"/></div>
-        </div>
+        <div class="field"><label>New Password</label><div class="input-wrap"><span class="icon">🔒</span><input type="password" id="fp-newpass" placeholder="Min 6 characters"/></div></div>
+        <div class="field"><label>Confirm Password</label><div class="input-wrap"><span class="icon">🔒</span><input type="password" id="fp-confpass" placeholder="Repeat new password"/></div></div>
         <button class="btn-main" onclick="fpStep3()">Save New Password →</button>
       </div>
     </div>
-
   </div>
 </div>
 
-<script>
-const USERS_KEY='narendra_hub_users_v2';
-const SESSION_KEY='narendra_hub_session';
-const DEFAULT_USERS=[
-  {username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false,dob:'1990-01-01'},
-  {username:'viewer',password:'View@123',name:'Guest Viewer',role:'viewer',status:'active',requestedEdit:false,dob:'2000-01-01'}
-];
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-function getUsers(){try{const r=localStorage.getItem(USERS_KEY);if(r){const u=JSON.parse(r);if(Array.isArray(u)&&u.length>0)return u;}}catch(e){}const u=JSON.parse(JSON.stringify(DEFAULT_USERS));saveUsers(u);return u;}
-function saveUsers(u){try{localStorage.setItem(USERS_KEY,JSON.stringify(u));}catch(e){}}
+const firebaseConfig = {
+  apiKey: "AIzaSyBJGdDWiyDnEZe4RXCCuGz6a0-PjYhJrFk",
+  authDomain: "project-hub-35563.firebaseapp.com",
+  projectId: "project-hub-35563",
+  storageBucket: "project-hub-35563.firebasestorage.app",
+  messagingSenderId: "223149391242",
+  appId: "1:223149391242:web:0150284b04ebfcfe9c9c73",
+  measurementId: "G-55MWTHFXFF"
+};
 
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const SESSION_KEY = 'narendra_hub_session';
+
+// ── Seed admin & viewer if not exist ─────────────────────────────────────────
+async function seedDefaultUsers(){
+  const defaults = [
+    {username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false,dob:'1990-01-01'},
+    {username:'viewer',password:'View@123',name:'Guest Viewer',role:'viewer',status:'active',requestedEdit:false,dob:'2000-01-01'}
+  ];
+  for(const u of defaults){
+    const ref = doc(db,'users', u.username.toLowerCase());
+    const snap = await getDoc(ref);
+    if(!snap.exists()) await setDoc(ref, u);
+  }
+}
+seedDefaultUsers();
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function showTab(t){
   ['login','register','forgot'].forEach(p=>{
     document.getElementById('pane-'+p).style.display=p===t?'block':'none';
@@ -272,110 +206,140 @@ function showTab(t){
   document.getElementById('tab-login').classList.toggle('active',t==='login');
   document.getElementById('tab-reg').classList.toggle('active',t==='register');
   document.getElementById('tab-forgot').classList.toggle('active',t==='forgot');
-  if(t==='forgot'){
-    document.getElementById('fp-step1').style.display='block';
-    document.getElementById('fp-step2').style.display='none';
-    document.getElementById('fp-step3').style.display='none';
-  }
+  if(t==='forgot'){['fp-step1','fp-step2','fp-step3'].forEach((s,i)=>document.getElementById(s).style.display=i===0?'block':'none');}
 }
+window.showTab = showTab;
 
-function doLogin(){
-  const u=document.getElementById('l-user').value.trim();
-  const p=document.getElementById('l-pass').value;
-  const err=document.getElementById('login-err');
-  err.classList.remove('show');
-  if(!u||!p){err.textContent='Please enter username and password.';err.classList.add('show');return;}
-  const users=getUsers();
-  const user=users.find(x=>x.username.toLowerCase()===u.toLowerCase()&&x.password===p);
-  if(!user){err.textContent='Invalid username or password.';err.classList.add('show');return;}
-  localStorage.setItem(SESSION_KEY,JSON.stringify({username:user.username,name:user.name,role:user.role,loginTime:Date.now()}));
-  window.location.href='index.html';
+function setLoading(id, on){ document.getElementById(id).classList.toggle('show', on); }
+function showErr(id, msg){ const e=document.getElementById(id); e.textContent=msg; e.classList.add('show'); }
+function hideErr(id){ document.getElementById(id).classList.remove('show'); }
+
+// ── Login ─────────────────────────────────────────────────────────────────────
+async function doLogin(){
+  hideErr('login-err');
+  const u = document.getElementById('l-user').value.trim();
+  const p = document.getElementById('l-pass').value;
+  if(!u||!p){ showErr('login-err','Please enter username and password.'); return; }
+  setLoading('login-loading', true);
+  document.getElementById('login-btn').disabled = true;
+  try{
+    const snap = await getDoc(doc(db,'users', u.toLowerCase()));
+    if(!snap.exists() || snap.data().password !== p){
+      showErr('login-err','Invalid username or password.');
+    } else {
+      const user = snap.data();
+      localStorage.setItem(SESSION_KEY, JSON.stringify({username:user.username, name:user.name, role:user.role, loginTime:Date.now()}));
+      window.location.href = 'index.html';
+    }
+  }catch(e){ showErr('login-err','Connection error. Please try again.'); }
+  setLoading('login-loading', false);
+  document.getElementById('login-btn').disabled = false;
 }
+window.doLogin = doLogin;
 
-let selectedRight='viewer';
+// ── Register ──────────────────────────────────────────────────────────────────
+let selectedRight = 'viewer';
 function selectRight(r){
-  selectedRight=r;
-  const v=document.getElementById('r-view'),e=document.getElementById('r-edit'),n=document.getElementById('edit-notice');
-  v.className='right-opt'+(r==='viewer'?' active-view':'');
-  e.className='right-opt'+(r==='editor'?' active-edit':'');
-  n.style.display=r==='editor'?'block':'none';
+  selectedRight = r;
+  document.getElementById('r-view').className = 'right-opt'+(r==='viewer'?' active-view':'');
+  document.getElementById('r-edit').className = 'right-opt'+(r==='editor'?' active-edit':'');
+  document.getElementById('edit-notice').style.display = r==='editor'?'block':'none';
 }
+window.selectRight = selectRight;
 
-function doRegister(){
+async function doRegister(){
+  hideErr('reg-err'); document.getElementById('reg-suc').classList.remove('show');
   const name=document.getElementById('r-name').value.trim();
   const u=document.getElementById('r-user').value.trim();
   const p=document.getElementById('r-pass').value;
   const dob=document.getElementById('r-dob').value;
-  const err=document.getElementById('reg-err'),suc=document.getElementById('reg-suc');
-  err.classList.remove('show');suc.classList.remove('show');
-  if(!name||!u||!p||!dob){err.textContent='All fields including Date of Birth are required.';err.classList.add('show');return;}
-  if(p.length<6){err.textContent='Password must be at least 6 characters.';err.classList.add('show');return;}
-  const users=getUsers();
-  if(users.find(x=>x.username.toLowerCase()===u.toLowerCase())){err.textContent='Username already taken.';err.classList.add('show');return;}
-  const requestedEdit=selectedRight==='editor';
-  users.push({username:u,password:p,name,role:'viewer',status:'active',requestedEdit,dob});
-  saveUsers(users);
-  suc.textContent=requestedEdit?'✓ Registered! Login now — Edit access active once Admin approves.':'✓ Account created! You can now login with View access.';
-  suc.classList.add('show');
-  ['r-name','r-user','r-pass'].forEach(i=>document.getElementById(i).value='');
-  document.getElementById('r-dob').value='';
-  selectRight('viewer');
-  setTimeout(()=>showTab('login'),2500);
+  if(!name||!u||!p||!dob){ showErr('reg-err','All fields including Date of Birth are required.'); return; }
+  if(p.length<6){ showErr('reg-err','Password must be at least 6 characters.'); return; }
+  setLoading('reg-loading', true);
+  document.getElementById('reg-btn').disabled = true;
+  try{
+    const ref = doc(db,'users', u.toLowerCase());
+    const snap = await getDoc(ref);
+    if(snap.exists()){ showErr('reg-err','Username already taken. Try another.'); }
+    else {
+      const requestedEdit = selectedRight==='editor';
+      await setDoc(ref, {username:u, password:p, name, role:'viewer', status:'active', requestedEdit, dob, createdAt: new Date().toISOString()});
+      const suc = document.getElementById('reg-suc');
+      suc.textContent = requestedEdit ? '✓ Registered! Login now — Edit access active once Admin approves.' : '✓ Account created! You can now login with View access.';
+      suc.classList.add('show');
+      ['r-name','r-user','r-pass'].forEach(i=>document.getElementById(i).value='');
+      document.getElementById('r-dob').value='';
+      selectRight('viewer');
+      setTimeout(()=>showTab('login'), 2500);
+    }
+  }catch(e){ showErr('reg-err','Connection error. Please try again.'); }
+  setLoading('reg-loading', false);
+  document.getElementById('reg-btn').disabled = false;
 }
+window.doRegister = doRegister;
 
-let fpUsername='';
-function fpStep1(){
-  const u=document.getElementById('fp-user').value.trim();
-  const err=document.getElementById('fp-err1');
-  err.classList.remove('show');
-  if(!u){err.textContent='Please enter your username.';err.classList.add('show');return;}
-  const users=getUsers();
-  const user=users.find(x=>x.username.toLowerCase()===u.toLowerCase());
-  if(!user){err.textContent='No account found with that username.';err.classList.add('show');return;}
-  if(!user.dob){err.textContent='No Date of Birth on file. Contact Admin to reset your password.';err.classList.add('show');return;}
-  fpUsername=user.username;
-  document.getElementById('fp-step1').style.display='none';
-  document.getElementById('fp-step2').style.display='block';
+// ── Forgot Password ───────────────────────────────────────────────────────────
+let fpUsername = '';
+async function fpStep1(){
+  hideErr('fp-err1');
+  const u = document.getElementById('fp-user').value.trim();
+  if(!u){ showErr('fp-err1','Please enter your username.'); return; }
+  try{
+    const snap = await getDoc(doc(db,'users', u.toLowerCase()));
+    if(!snap.exists()){ showErr('fp-err1','No account found with that username.'); return; }
+    if(!snap.data().dob){ showErr('fp-err1','No Date of Birth on file. Contact Admin.'); return; }
+    fpUsername = u.toLowerCase();
+    document.getElementById('fp-step1').style.display='none';
+    document.getElementById('fp-step2').style.display='block';
+  }catch(e){ showErr('fp-err1','Connection error. Please try again.'); }
 }
-function fpStep2(){
-  const dob=document.getElementById('fp-dob').value;
-  const err=document.getElementById('fp-err2');
-  err.classList.remove('show');
-  if(!dob){err.textContent='Please enter your Date of Birth.';err.classList.add('show');return;}
-  const users=getUsers();
-  const user=users.find(x=>x.username===fpUsername);
-  if(!user||user.dob!==dob){err.textContent='Date of Birth does not match. Please try again.';err.classList.add('show');return;}
-  document.getElementById('fp-step2').style.display='none';
-  document.getElementById('fp-step3').style.display='block';
+window.fpStep1 = fpStep1;
+
+async function fpStep2(){
+  hideErr('fp-err2');
+  const dob = document.getElementById('fp-dob').value;
+  if(!dob){ showErr('fp-err2','Please enter your Date of Birth.'); return; }
+  try{
+    const snap = await getDoc(doc(db,'users', fpUsername));
+    if(!snap.exists() || snap.data().dob !== dob){ showErr('fp-err2','Date of Birth does not match.'); return; }
+    document.getElementById('fp-step2').style.display='none';
+    document.getElementById('fp-step3').style.display='block';
+  }catch(e){ showErr('fp-err2','Connection error. Please try again.'); }
 }
-function fpStep3(){
-  const np=document.getElementById('fp-newpass').value;
-  const cp=document.getElementById('fp-confpass').value;
-  const err=document.getElementById('fp-err3'),suc=document.getElementById('fp-suc3');
-  err.classList.remove('show');suc.classList.remove('show');
-  if(!np||!cp){err.textContent='Please fill both fields.';err.classList.add('show');return;}
-  if(np.length<6){err.textContent='Password must be at least 6 characters.';err.classList.add('show');return;}
-  if(np!==cp){err.textContent='Passwords do not match.';err.classList.add('show');return;}
-  const users=getUsers();
-  const user=users.find(x=>x.username===fpUsername);
-  if(user){user.password=np;saveUsers(users);}
-  suc.textContent='✓ Password reset successfully! Redirecting to login...';
-  suc.classList.add('show');
-  document.getElementById('fp-newpass').value='';
-  document.getElementById('fp-confpass').value='';
-  fpUsername='';
-  setTimeout(()=>showTab('login'),2200);
+window.fpStep2 = fpStep2;
+
+async function fpStep3(){
+  hideErr('fp-err3');
+  const np = document.getElementById('fp-newpass').value;
+  const cp = document.getElementById('fp-confpass').value;
+  if(!np||!cp){ showErr('fp-err3','Please fill both fields.'); return; }
+  if(np.length<6){ showErr('fp-err3','Password must be at least 6 characters.'); return; }
+  if(np!==cp){ showErr('fp-err3','Passwords do not match.'); return; }
+  try{
+    await updateDoc(doc(db,'users', fpUsername), {password: np});
+    const suc = document.getElementById('fp-suc3');
+    suc.textContent = '✓ Password reset successfully! Redirecting to login...';
+    suc.classList.add('show');
+    document.getElementById('fp-newpass').value='';
+    document.getElementById('fp-confpass').value='';
+    fpUsername = '';
+    setTimeout(()=>showTab('login'), 2200);
+  }catch(e){ showErr('fp-err3','Connection error. Please try again.'); }
 }
+window.fpStep3 = fpStep3;
+
 function fpBack(){
   document.getElementById('fp-step2').style.display='none';
   document.getElementById('fp-step1').style.display='block';
-  document.getElementById('fp-err1').classList.remove('show');
+  hideErr('fp-err1');
   document.getElementById('fp-dob').value='';
   fpUsername='';
 }
+window.fpBack = fpBack;
 
+// Check if already logged in
 const session=(()=>{try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch(e){return null;}})();
-if(session&&session.username){window.location.href='index.html';}
+if(session&&session.username){ window.location.href='index.html'; }
 </script>
 </body>
 </html>
