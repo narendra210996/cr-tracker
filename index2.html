@@ -215,7 +215,7 @@ tbody tr.sel{background:#eff6ff;}
     <input type="text" id="nc-title" placeholder="CR Title"/>
     <select id="nc-pri"><option>High</option><option>Medium</option><option>Low</option></select>
     <input type="text" id="nc-requester" placeholder="Requester / Stakeholder"/>
-    <input type="text" id="nc-delivery" placeholder="Expected delivery  e.g. Apr 20"/>
+    <input type="date" id="nc-delivery"/>
     <select id="nc-stage">
       <option>Requirement Gathering</option><option>Vendor Data Submission</option>
       <option>Development</option><option>QA / Testing</option>
@@ -264,7 +264,7 @@ tbody tr.sel{background:#eff6ff;}
         <option>UAT</option><option>Go Live</option><option>On Hold</option>
       </select>
       <select id="e-priority"><option>High</option><option>Medium</option><option>Low</option></select>
-      <input type="text" id="e-delivery" placeholder="Expected delivery date..."/>
+      <input type="date" id="e-delivery"/>
       <select id="e-uat"><option value="No">UAT: Pending</option><option value="Yes">UAT: Signed Off</option></select>
     </div>
     <textarea class="notes-ta" id="e-notes" placeholder="Type a new note or follow-up action... (each save adds a timestamped entry above)"></textarea>
@@ -377,6 +377,24 @@ function stageCls(s){ if(s==='On Hold') return 'b-hold'; return STAGE_CLS[STAGE_
 function isOverdue(cr){ if(!cr.planned||cr.stage==='Go Live') return false; const d=new Date(cr.planned); return !isNaN(d)&&d<new Date(); }
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
 
+// Convert any date string to YYYY-MM-DD for date input
+function toInputDate(val){
+  if(!val) return '';
+  // Already in YYYY-MM-DD
+  if(/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+  // Try parsing e.g. "Apr 10, 2026"
+  const d = new Date(val);
+  if(!isNaN(d)) return d.toISOString().slice(0,10);
+  return '';
+}
+// Format YYYY-MM-DD to readable "10 Apr 2026" for display
+function formatDate(val){
+  if(!val) return '—';
+  const d = new Date(val);
+  if(isNaN(d)) return val;
+  return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+}
+
 function renderStagePills(){
   const el=document.getElementById('stage-row');
   const pills=STAGES.map((s,i)=>{
@@ -420,7 +438,7 @@ function renderTable(){
       <td style="font-size:11px;color:var(--muted);">${c.requester}</td>
       <td><span class="badge ${priCls(c.priority)}">${c.priority}</span></td>
       <td><span class="badge ${stageCls(c.stage)}">${c.stage}</span></td>
-      <td style="font-size:11px;" class="${od?'overdue-flag':''}">${c.planned||'—'}${od?' ⚠':''}</td>
+      <td style="font-size:11px;" class="${od?'overdue-flag':''}">${c.planned ? formatDate(c.planned) : '—'}${od?' ⚠':''}</td>
       <td><span class="badge ${c.uat==='Yes'?'b-done':'b-todo'}">${c.uat==='Yes'?'Done':'Pending'}</span></td>
       <td><div class="prog-cell"><div class="prog-bg"><div class="prog-bar" style="width:${p}%;background:${fill};"></div></div><span class="prog-pct">${p}%</span></div></td>
     </tr>`;
@@ -465,7 +483,7 @@ function openDetail(id){
     ['Priority',`<span class="badge ${priCls(c.priority)}">${c.priority}</span>`],
     ['Stage',`<span class="badge ${stageCls(c.stage)}">${c.stage}</span>`],
     ['Progress',`${pct(c.stage)}% complete`],
-    ['Delivery',c.planned||'Not set'],
+    ['Delivery', c.planned ? formatDate(c.planned) : 'Not set'],
     ['UAT status',`<span class="badge ${c.uat==='Yes'?'b-done':'b-todo'}">${c.uat==='Yes'?'Signed off':'Pending'}</span>`],
     ['UAT by',c.uatBy||'—'],
   ].map(([l,v])=>`<div class="dp-field"><div class="lbl">${l}</div><div class="val">${v}</div></div>`).join('');
@@ -485,7 +503,7 @@ function openDetail(id){
   // Timeline
   const p=pct(c.stage);
   document.getElementById('dp-timeline').innerHTML=`
-    <div class="tl-row"><div class="tl-lbl">Planned</div><div class="tl-bar-bg"><div class="tl-bar" style="width:100%;background:#bfdbfe;"></div></div><div class="tl-date">${c.planned||'Not set'}</div></div>
+    <div class="tl-row"><div class="tl-lbl">Planned</div><div class="tl-bar-bg"><div class="tl-bar" style="width:100%;background:#bfdbfe;"></div></div><div class="tl-date">${c.planned ? formatDate(c.planned) : 'Not set'}</div></div>
     <div class="tl-row"><div class="tl-lbl">Actual</div><div class="tl-bar-bg"><div class="tl-bar" style="width:${p}%;background:${p===100?'#059669':'#2563eb'};"></div></div><div class="tl-date">${p===100?'Complete':p+'% done'}</div></div>`;
   // UAT
   const uatItems=[
@@ -497,7 +515,7 @@ function openDetail(id){
   // Edit fields
   document.getElementById('e-stage').value=c.stage;
   document.getElementById('e-priority').value=c.priority;
-  document.getElementById('e-delivery').value=c.planned||'';
+  document.getElementById('e-delivery').value=toInputDate(c.planned);
   document.getElementById('e-uat').value=c.uat;
   document.getElementById('e-notes').value='';
   renderNotesDisplay(c);
@@ -533,7 +551,7 @@ function saveCREdit(){
     ['Priority',`<span class="badge ${priCls(c.priority)}">${c.priority}</span>`],
     ['Stage',`<span class="badge ${stageCls(c.stage)}">${c.stage}</span>`],
     ['Progress',`${pct(c.stage)}% complete`],
-    ['Delivery',c.planned||'Not set'],
+    ['Delivery', c.planned ? formatDate(c.planned) : 'Not set'],
     ['UAT status',`<span class="badge ${c.uat==='Yes'?'b-done':'b-todo'}">${c.uat==='Yes'?'Signed off':'Pending'}</span>`],
     ['UAT by',c.uatBy||'—'],
   ].map(([l,v])=>`<div class="dp-field"><div class="lbl">${l}</div><div class="val">${v}</div></div>`).join('');
