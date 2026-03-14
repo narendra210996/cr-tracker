@@ -197,7 +197,19 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 <div class="toast" id="toast"></div>
 
 <script type="module">
-const PROJ_KEY = 'narendra_projects_v1';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBJGdDWiyDnEZe4RXCCuGz6a0-PjYhJrFk",
+  authDomain: "project-hub-35563.firebaseapp.com",
+  projectId: "project-hub-35563",
+  storageBucket: "project-hub-35563.firebasestorage.app",
+  messagingSenderId: "223149391242",
+  appId: "1:223149391242:web:0150284b04ebfcfe9c9c73"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 const DEFAULT_PROJECTS = [
   {
@@ -451,8 +463,9 @@ async function adminResetPassword(username){
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
+(async()=>{
 const session = getSession();
-if(!session || !session.username){ window.location.href='login.html'; }
+if(!session || !session.username){ window.location.href='login.html'; return; }
 
 const userBadge = document.getElementById('user-role-badge');
 document.getElementById('user-name').textContent = session.name || session.username;
@@ -463,6 +476,23 @@ else { userBadge.textContent='Viewer'; userBadge.style.background='#f8fafc'; use
 loadProjects();
 document.getElementById('top-date').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short',year:'numeric'});
 renderProjects();
+})();
+
+// Expose functions to global scope for onclick handlers
+window.openAdminPanel = openAdminPanel;
+window.closeAdminPanel = closeAdminPanel;
+window.doLogout = doLogout;
+window.openProject = openProject;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.saveProject = saveProject;
+window.toast = toast;
+window.approveEdit = approveEdit;
+window.declineEdit = declineEdit;
+window.changeRole = changeRole;
+window.adminResetPassword = adminResetPassword;
+window.toggleStageFilter = toggleStageFilter;
+window.renderProjects = renderProjects;
 </script>
 </body>
 </html>

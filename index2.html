@@ -294,7 +294,19 @@ tbody tr.sel{background:#eff6ff;}
 <input type="file" id="file-import" accept=".json" style="display:none;" onchange="handleImport(event)"/>
 
 <script type="module">
-const STAGES    = ['Requirement Gathering','Vendor Data Submission','Development','QA / Testing','UAT','Go Live'];
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBJGdDWiyDnEZe4RXCCuGz6a0-PjYhJrFk",
+  authDomain: "project-hub-35563.firebaseapp.com",
+  projectId: "project-hub-35563",
+  storageBucket: "project-hub-35563.firebasestorage.app",
+  messagingSenderId: "223149391242",
+  appId: "1:223149391242:web:0150284b04ebfcfe9c9c73"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 const STAGE_SH  = ['Req','Vendor','Dev','QA','UAT','Go Live'];
 const STAGE_IDX = Object.fromEntries(STAGES.map((s,i)=>[s,i]));
 const STAGE_CLS = ['b-req','b-ven','b-dev','b-qa','b-uat','b-gl'];
@@ -697,8 +709,18 @@ function applyPermissions(role){
 }
 
 // ── Init (async) ─────────────────────────────────────────────────────────────
+// Expose all functions for onclick handlers (required for ES modules)
+window.toggleAddForm=toggleAddForm; window.saveCR=saveCR; window.closeDetail=closeDetail;
+window.saveCREdit=saveCREdit; window.deleteCR=deleteCR; window.attachDocument=attachDocument;
+window.downloadDoc=downloadDoc; window.deleteDoc=deleteDoc; window.exportCSV=exportCSV;
+window.exportJSON=exportJSON; window.importJSON=importJSON; window.handleImport=handleImport;
+window.openDetail=openDetail; window.toggleStageFilter=toggleStageFilter;
+window.requestEditAccess=requestEditAccess; window.doLogout=doLogout;
+window.renderTable=renderTable;
+
+(async()=>{
 const crSession = getSessionCR();
-if(!crSession || !crSession.username){ window.location.href='login.html'; }
+if(!crSession || !crSession.username){ window.location.href='login.html'; return; }
 
 // Show user info
 document.getElementById('cr-user-name').textContent = crSession.name || crSession.username;
@@ -728,6 +750,7 @@ if(!loaded){
 }
 renderStagePills();
 renderTable();
+})();
 </script>
 </body>
 </html>
