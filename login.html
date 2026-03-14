@@ -12,7 +12,6 @@
   --text:#1a1f2e;--muted:#8492a6;--accent:#2563eb;--accent2:#1d4ed8;
   --green:#16a34a;--amber:#d97706;--red:#dc2626;
   --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.06);
-  --shadow2:0 2px 8px rgba(37,99,235,.18);
 }
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
 body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle,#cbd5e1 1px,transparent 1px);background-size:28px 28px;opacity:.45;pointer-events:none;}
@@ -41,10 +40,10 @@ h2{font-size:19px;font-weight:700;color:var(--text);margin-bottom:4px;}
 .input-wrap .icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none;}
 .field input,.field select{width:100%;font-size:13px;padding:10px 13px 10px 36px;border:1.5px solid var(--border);border-radius:9px;background:#fff;color:var(--text);outline:none;font-family:inherit;transition:border .15s,box-shadow .15s;}
 .field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
-.field input.no-icon{padding-left:13px;}
-.field select{padding-left:13px;color-scheme:light;}
+.field input.no-icon,.field select{padding-left:13px;}
 .btn-main{width:100%;padding:11px;font-size:14px;font-weight:600;background:var(--accent);color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit;transition:all .18s;margin-top:4px;}
-.btn-main:hover{background:var(--accent2);box-shadow:var(--shadow2);}
+.btn-main:hover{background:var(--accent2);}
+.btn-main:disabled{opacity:.6;cursor:not-allowed;}
 .err{font-size:12px;color:var(--red);background:#fef2f2;border:1px solid #fecaca;padding:9px 12px;border-radius:8px;margin-bottom:12px;display:none;}
 .err.show{display:block;}
 .suc{font-size:12px;color:var(--green);background:#f0fdf4;border:1px solid #bbf7d0;padding:9px 12px;border-radius:8px;margin-bottom:12px;display:none;}
@@ -64,10 +63,6 @@ h2{font-size:19px;font-weight:700;color:var(--text);margin-bottom:4px;}
 .step.active{background:var(--accent);border-color:var(--accent);color:#fff;}
 .step-line{flex:1;height:2px;background:var(--border);border-radius:1px;}
 .step-line.done{background:var(--green);}
-.loading{display:none;text-align:center;padding:20px;color:var(--muted);font-size:13px;}
-.loading.show{display:block;}
-.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:8px;}
-@keyframes spin{to{transform:rotate(360deg);}}
 @media(max-width:640px){.wrap{flex-direction:column;border-radius:16px;}.left{width:100%;padding:28px 24px;min-height:auto;}.brand-features{display:none;}.right{padding:28px 24px;}}
 </style>
 </head>
@@ -93,32 +88,28 @@ h2{font-size:19px;font-weight:700;color:var(--text);margin-bottom:4px;}
       <div class="tab" id="tab-reg" onclick="showTab('register')">Register</div>
       <div class="tab" id="tab-forgot" onclick="showTab('forgot')">Forgot Password</div>
     </div>
-
     <!-- LOGIN -->
     <div id="pane-login">
       <h2>Welcome back 👋</h2>
       <div class="sub">Sign in to access your Project Dashboard.</div>
       <div class="err" id="login-err"></div>
-      <div class="loading" id="login-loading"><div class="spinner"></div><br>Signing you in...</div>
       <div class="field"><label>Username</label><div class="input-wrap"><span class="icon">👤</span><input type="text" id="l-user" placeholder="Enter your username"/></div></div>
       <div class="field"><label>Password</label><div class="input-wrap"><span class="icon">🔒</span><input type="password" id="l-pass" placeholder="Enter your password" onkeydown="if(event.key==='Enter')doLogin()"/></div></div>
       <button class="btn-main" id="login-btn" onclick="doLogin()">Sign In →</button>
       <button class="link-btn" onclick="showTab('forgot')">Forgot your password?</button>
     </div>
-
     <!-- REGISTER -->
     <div id="pane-register" style="display:none;">
       <h2>Create account</h2>
       <div class="sub">View access is instant. Edit access requires Admin approval.</div>
       <div class="err" id="reg-err"></div>
       <div class="suc" id="reg-suc"></div>
-      <div class="loading" id="reg-loading"><div class="spinner"></div><br>Creating your account...</div>
       <div class="field"><label>Full Name</label><div class="input-wrap"><span class="icon">👤</span><input type="text" id="r-name" placeholder="Your full name"/></div></div>
       <div class="field"><label>Username</label><div class="input-wrap"><span class="icon">@</span><input type="text" id="r-user" placeholder="Choose a username"/></div></div>
       <div class="field"><label>Password</label><div class="input-wrap"><span class="icon">🔒</span><input type="password" id="r-pass" placeholder="Min 6 characters"/></div></div>
       <div class="field">
         <label>Date of Birth <span style="color:var(--muted);font-weight:400;text-transform:none;font-size:10px;">(for password reset)</span></label>
-        <input type="date" id="r-dob" class="no-icon" style="width:100%;font-size:13px;padding:10px 13px;border:1.5px solid var(--border);border-radius:9px;background:#fff;color:var(--text);outline:none;font-family:inherit;cursor:pointer;"/>
+        <input type="date" id="r-dob" style="width:100%;font-size:13px;padding:10px 13px;border:1.5px solid var(--border);border-radius:9px;background:#fff;color:var(--text);outline:none;font-family:inherit;cursor:pointer;"/>
       </div>
       <div class="field">
         <label>Access Rights</label>
@@ -130,7 +121,6 @@ h2{font-size:19px;font-weight:700;color:var(--text);margin-bottom:4px;}
       <div id="edit-notice" style="display:none;font-size:11px;color:var(--amber);background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:8px 10px;margin-bottom:12px;">⏳ Edit access pending — Admin must approve before you can make changes.</div>
       <button class="btn-main" id="reg-btn" onclick="doRegister()">Create Account →</button>
     </div>
-
     <!-- FORGOT PASSWORD -->
     <div id="pane-forgot" style="display:none;">
       <div id="fp-step1">
@@ -165,87 +155,71 @@ h2{font-size:19px;font-weight:700;color:var(--text);margin-bottom:4px;}
   </div>
 </div>
 
-<!-- Firebase SDK -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
+<!-- Firebase CDN (non-module, global scope) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
 const firebaseConfig = {
   apiKey: "AIzaSyBJGdDWiyDnEZe4RXCCuGz6a0-PjYhJrFk",
   authDomain: "project-hub-35563.firebaseapp.com",
   projectId: "project-hub-35563",
   storageBucket: "project-hub-35563.firebasestorage.app",
   messagingSenderId: "223149391242",
-  appId: "1:223149391242:web:0150284b04ebfcfe9c9c73",
-  measurementId: "G-55MWTHFXFF"
+  appId: "1:223149391242:web:0150284b04ebfcfe9c9c73"
 };
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 const SESSION_KEY = 'narendra_hub_session';
 
-// ── Seed admin & viewer if not exist ─────────────────────────────────────────
-async function seedDefaultUsers(){
+// Seed default users
+async function seedDefaults(){
   const defaults = [
     {username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false,dob:'1990-01-01'},
     {username:'viewer',password:'View@123',name:'Guest Viewer',role:'viewer',status:'active',requestedEdit:false,dob:'2000-01-01'}
   ];
   for(const u of defaults){
-    const ref = doc(db,'users', u.username.toLowerCase());
-    const snap = await getDoc(ref);
-    if(!snap.exists()) await setDoc(ref, u);
+    const ref = db.collection('users').doc(u.username.toLowerCase());
+    const snap = await ref.get();
+    if(!snap.exists) await ref.set(u);
   }
 }
-seedDefaultUsers();
+seedDefaults();
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function showTab(t){
-  ['login','register','forgot'].forEach(p=>{
-    document.getElementById('pane-'+p).style.display=p===t?'block':'none';
-  });
-  document.getElementById('tab-login').classList.toggle('active',t==='login');
-  document.getElementById('tab-reg').classList.toggle('active',t==='register');
-  document.getElementById('tab-forgot').classList.toggle('active',t==='forgot');
-  if(t==='forgot'){['fp-step1','fp-step2','fp-step3'].forEach((s,i)=>document.getElementById(s).style.display=i===0?'block':'none');}
+  ['login','register','forgot'].forEach(p=>{ document.getElementById('pane-'+p).style.display=p===t?'block':'none'; });
+  ['login','reg','forgot'].forEach(id=>{ document.getElementById('tab-'+id).classList.toggle('active', (id==='login'&&t==='login')||(id==='reg'&&t==='register')||(id==='forgot'&&t==='forgot')); });
+  if(t==='forgot'){ document.getElementById('fp-step1').style.display='block'; document.getElementById('fp-step2').style.display='none'; document.getElementById('fp-step3').style.display='none'; }
 }
-window.showTab = showTab;
 
-function setLoading(id, on){ document.getElementById(id).classList.toggle('show', on); }
-function showErr(id, msg){ const e=document.getElementById(id); e.textContent=msg; e.classList.add('show'); }
+function showErr(id,msg){ const e=document.getElementById(id); e.textContent=msg; e.classList.add('show'); }
 function hideErr(id){ document.getElementById(id).classList.remove('show'); }
 
-// ── Login ─────────────────────────────────────────────────────────────────────
 async function doLogin(){
   hideErr('login-err');
-  const u = document.getElementById('l-user').value.trim();
-  const p = document.getElementById('l-pass').value;
+  const u=document.getElementById('l-user').value.trim();
+  const p=document.getElementById('l-pass').value;
   if(!u||!p){ showErr('login-err','Please enter username and password.'); return; }
-  setLoading('login-loading', true);
-  document.getElementById('login-btn').disabled = true;
+  const btn=document.getElementById('login-btn');
+  btn.disabled=true; btn.textContent='Signing in...';
   try{
-    const snap = await getDoc(doc(db,'users', u.toLowerCase()));
-    if(!snap.exists() || snap.data().password !== p){
-      showErr('login-err','Invalid username or password.');
-    } else {
-      const user = snap.data();
-      localStorage.setItem(SESSION_KEY, JSON.stringify({username:user.username, name:user.name, role:user.role, loginTime:Date.now()}));
-      window.location.href = 'index.html';
+    const snap = await db.collection('users').doc(u.toLowerCase()).get();
+    if(!snap.exists || snap.data().password!==p){ showErr('login-err','Invalid username or password.'); }
+    else{
+      const user=snap.data();
+      localStorage.setItem(SESSION_KEY, JSON.stringify({username:user.username,name:user.name,role:user.role,loginTime:Date.now()}));
+      window.location.href='index.html';
     }
-  }catch(e){ showErr('login-err','Connection error. Please try again.'); }
-  setLoading('login-loading', false);
-  document.getElementById('login-btn').disabled = false;
+  }catch(e){ showErr('login-err','Connection error. Check internet and try again.'); }
+  btn.disabled=false; btn.textContent='Sign In →';
 }
-window.doLogin = doLogin;
 
-// ── Register ──────────────────────────────────────────────────────────────────
-let selectedRight = 'viewer';
+let selectedRight='viewer';
 function selectRight(r){
-  selectedRight = r;
-  document.getElementById('r-view').className = 'right-opt'+(r==='viewer'?' active-view':'');
-  document.getElementById('r-edit').className = 'right-opt'+(r==='editor'?' active-edit':'');
-  document.getElementById('edit-notice').style.display = r==='editor'?'block':'none';
+  selectedRight=r;
+  document.getElementById('r-view').className='right-opt'+(r==='viewer'?' active-view':'');
+  document.getElementById('r-edit').className='right-opt'+(r==='editor'?' active-edit':'');
+  document.getElementById('edit-notice').style.display=r==='editor'?'block':'none';
 }
-window.selectRight = selectRight;
 
 async function doRegister(){
   hideErr('reg-err'); document.getElementById('reg-suc').classList.remove('show');
@@ -255,91 +229,80 @@ async function doRegister(){
   const dob=document.getElementById('r-dob').value;
   if(!name||!u||!p||!dob){ showErr('reg-err','All fields including Date of Birth are required.'); return; }
   if(p.length<6){ showErr('reg-err','Password must be at least 6 characters.'); return; }
-  setLoading('reg-loading', true);
-  document.getElementById('reg-btn').disabled = true;
+  const btn=document.getElementById('reg-btn');
+  btn.disabled=true; btn.textContent='Creating account...';
   try{
-    const ref = doc(db,'users', u.toLowerCase());
-    const snap = await getDoc(ref);
-    if(snap.exists()){ showErr('reg-err','Username already taken. Try another.'); }
-    else {
-      const requestedEdit = selectedRight==='editor';
-      await setDoc(ref, {username:u, password:p, name, role:'viewer', status:'active', requestedEdit, dob, createdAt: new Date().toISOString()});
-      const suc = document.getElementById('reg-suc');
-      suc.textContent = requestedEdit ? '✓ Registered! Login now — Edit access active once Admin approves.' : '✓ Account created! You can now login with View access.';
+    const ref=db.collection('users').doc(u.toLowerCase());
+    const snap=await ref.get();
+    if(snap.exists){ showErr('reg-err','Username already taken.'); }
+    else{
+      const requestedEdit=selectedRight==='editor';
+      await ref.set({username:u,password:p,name,role:'viewer',status:'active',requestedEdit,dob,createdAt:new Date().toISOString()});
+      const suc=document.getElementById('reg-suc');
+      suc.textContent=requestedEdit?'✓ Registered! Login now — Edit access active once Admin approves.':'✓ Account created! You can now login.';
       suc.classList.add('show');
       ['r-name','r-user','r-pass'].forEach(i=>document.getElementById(i).value='');
       document.getElementById('r-dob').value='';
       selectRight('viewer');
-      setTimeout(()=>showTab('login'), 2500);
+      setTimeout(()=>showTab('login'),2500);
     }
-  }catch(e){ showErr('reg-err','Connection error. Please try again.'); }
-  setLoading('reg-loading', false);
-  document.getElementById('reg-btn').disabled = false;
+  }catch(e){ showErr('reg-err','Connection error. Try again.'); }
+  btn.disabled=false; btn.textContent='Create Account →';
 }
-window.doRegister = doRegister;
 
-// ── Forgot Password ───────────────────────────────────────────────────────────
-let fpUsername = '';
+let fpUsername='';
 async function fpStep1(){
   hideErr('fp-err1');
-  const u = document.getElementById('fp-user').value.trim();
+  const u=document.getElementById('fp-user').value.trim();
   if(!u){ showErr('fp-err1','Please enter your username.'); return; }
   try{
-    const snap = await getDoc(doc(db,'users', u.toLowerCase()));
-    if(!snap.exists()){ showErr('fp-err1','No account found with that username.'); return; }
-    if(!snap.data().dob){ showErr('fp-err1','No Date of Birth on file. Contact Admin.'); return; }
-    fpUsername = u.toLowerCase();
+    const snap=await db.collection('users').doc(u.toLowerCase()).get();
+    if(!snap.exists){ showErr('fp-err1','No account found with that username.'); return; }
+    if(!snap.data().dob){ showErr('fp-err1','No DOB on file. Contact Admin.'); return; }
+    fpUsername=u.toLowerCase();
     document.getElementById('fp-step1').style.display='none';
     document.getElementById('fp-step2').style.display='block';
-  }catch(e){ showErr('fp-err1','Connection error. Please try again.'); }
+  }catch(e){ showErr('fp-err1','Connection error. Try again.'); }
 }
-window.fpStep1 = fpStep1;
-
 async function fpStep2(){
   hideErr('fp-err2');
-  const dob = document.getElementById('fp-dob').value;
+  const dob=document.getElementById('fp-dob').value;
   if(!dob){ showErr('fp-err2','Please enter your Date of Birth.'); return; }
   try{
-    const snap = await getDoc(doc(db,'users', fpUsername));
-    if(!snap.exists() || snap.data().dob !== dob){ showErr('fp-err2','Date of Birth does not match.'); return; }
+    const snap=await db.collection('users').doc(fpUsername).get();
+    if(!snap.exists||snap.data().dob!==dob){ showErr('fp-err2','Date of Birth does not match.'); return; }
     document.getElementById('fp-step2').style.display='none';
     document.getElementById('fp-step3').style.display='block';
-  }catch(e){ showErr('fp-err2','Connection error. Please try again.'); }
+  }catch(e){ showErr('fp-err2','Connection error. Try again.'); }
 }
-window.fpStep2 = fpStep2;
-
 async function fpStep3(){
   hideErr('fp-err3');
-  const np = document.getElementById('fp-newpass').value;
-  const cp = document.getElementById('fp-confpass').value;
+  const np=document.getElementById('fp-newpass').value;
+  const cp=document.getElementById('fp-confpass').value;
   if(!np||!cp){ showErr('fp-err3','Please fill both fields.'); return; }
   if(np.length<6){ showErr('fp-err3','Password must be at least 6 characters.'); return; }
   if(np!==cp){ showErr('fp-err3','Passwords do not match.'); return; }
   try{
-    await updateDoc(doc(db,'users', fpUsername), {password: np});
-    const suc = document.getElementById('fp-suc3');
-    suc.textContent = '✓ Password reset successfully! Redirecting to login...';
+    await db.collection('users').doc(fpUsername).update({password:np});
+    const suc=document.getElementById('fp-suc3');
+    suc.textContent='✓ Password reset! Redirecting to login...';
     suc.classList.add('show');
-    document.getElementById('fp-newpass').value='';
-    document.getElementById('fp-confpass').value='';
-    fpUsername = '';
-    setTimeout(()=>showTab('login'), 2200);
-  }catch(e){ showErr('fp-err3','Connection error. Please try again.'); }
+    fpUsername='';
+    setTimeout(()=>showTab('login'),2200);
+  }catch(e){ showErr('fp-err3','Connection error. Try again.'); }
 }
-window.fpStep3 = fpStep3;
-
 function fpBack(){
   document.getElementById('fp-step2').style.display='none';
   document.getElementById('fp-step1').style.display='block';
-  hideErr('fp-err1');
   document.getElementById('fp-dob').value='';
   fpUsername='';
 }
-window.fpBack = fpBack;
 
-// Check if already logged in
-const session=(()=>{try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch(e){return null;}})();
-if(session&&session.username){ window.location.href='index.html'; }
+// Already logged in?
+try{
+  const s=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');
+  if(s&&s.username) window.location.href='index.html';
+}catch(e){}
 </script>
 </body>
 </html>
