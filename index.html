@@ -96,9 +96,20 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
   .wrapper{padding:20px 16px;}
 }
 </style>
-<!-- Firebase compat SDK -->
+<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyBJGdDWiyDnEZe4RXCCuGz6a0-PjYhJrFk",
+  authDomain:"project-hub-35563.firebaseapp.com",
+  projectId:"project-hub-35563",
+  storageBucket:"project-hub-35563.firebasestorage.app",
+  messagingSenderId:"223149391242",
+  appId:"1:223149391242:web:0150284b04ebfcfe9c9c73"
+});
+const db = firebase.firestore();
+</script>
 </head>
 <body>
 <div class="wrapper">
@@ -355,15 +366,10 @@ function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 const SESSION_KEY = 'narendra_hub_session';
-const USERS_KEY   = 'narendra_hub_users_v2';
+const USERS_KEY   = 'narendra_hub_users_v1';
 
 function getSession(){ try{ return JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); }catch(e){return null;} }
-function getUsers(){
-  let users=[];
-  try{ const r=localStorage.getItem(USERS_KEY); if(r){const u=JSON.parse(r);if(Array.isArray(u)&&u.length>0)users=u;} }catch(e){}
-  DEFAULT_USERS.forEach(def=>{ if(!users.find(u=>u.username===def.username)) users.push(JSON.parse(JSON.stringify(def))); });
-  saveUsers(users); return users;
-}catch(e){} return [{username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false}]; }
+function getUsers(){ try{ const r=localStorage.getItem(USERS_KEY); if(r){const u=JSON.parse(r);if(Array.isArray(u)&&u.length>0)return u;} }catch(e){} return [{username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false}]; }
 function saveUsers(u){ try{localStorage.setItem(USERS_KEY,JSON.stringify(u));}catch(e){} }
 
 function doLogout(){
@@ -377,8 +383,8 @@ function openAdminPanel(){
 }
 function closeAdminPanel(){ document.getElementById('admin-modal').style.display='none'; }
 
-function renderAdminPanel(){
-  const users = getUsers();
+async function renderAdminPanel(){
+  const users = await fbGetAllUsers();
   const pending = users.filter(u=>u.requestedEdit && u.role==='viewer');
 
   // Update count badge
@@ -430,31 +436,14 @@ function renderAdminPanel(){
     </div>`).join('');
 }
 
-function approveEdit(username){
-  const users=getUsers();
-  const u=users.find(x=>x.username===username);
-  if(u){u.role='editor';u.requestedEdit=false;}
-  saveUsers(users); renderAdminPanel(); toast('✓ Edit access granted to '+username);
-}
-function declineEdit(username){
-  const users=getUsers();
-  const u=users.find(x=>x.username===username);
-  if(u){u.requestedEdit=false;}
-  saveUsers(users); renderAdminPanel(); toast('✕ Request declined for '+username);
-}
-function changeRole(username, newRole){
-  const users=getUsers();
-  const u=users.find(x=>x.username===username);
-  if(u){u.role=newRole; if(newRole==='editor'||newRole==='admin') u.requestedEdit=false;}
-  saveUsers(users); renderAdminPanel(); toast('✓ Role updated for '+username);
-}
-function adminResetPassword(username){
-  const newPass = prompt(`Set new password for @${username}:`);
-  if(!newPass) return;
-  if(newPass.length<6){ toast('⚠ Password must be at least 6 characters'); return; }
-  const users=getUsers();
-  const u=users.find(x=>x.username===username);
-  if(u){ u.password=newPass; saveUsers(users); toast('✓ Password reset for '+username); }
+async function approveEdit(username){ await fbUpdateUser(username,{role:'editor',requestedEdit:false}); renderAdminPanel(); toast('✓ Edit access granted to '+username); }
+async function declineEdit(username){ await fbUpdateUser(username,{requestedEdit:false}); renderAdminPanel(); toast('✕ Request declined'); }
+async function changeRole(username,newRole){ await fbUpdateUser(username,{role:newRole,requestedEdit:false}); renderAdminPanel(); toast('✓ Role updated'); }
+async function adminResetPassword(username){
+  const p=prompt('Set new password for @'+username+':');
+  if(!p) return;
+  if(p.length<6){toast('⚠ Min 6 characters');return;}
+  await fbUpdateUser(username,{password:p}); toast('✓ Password reset for '+username);
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
@@ -472,182 +461,6 @@ else { userBadge.textContent='Viewer'; userBadge.style.background='#6b728033'; u
 loadProjects();
 document.getElementById('top-date').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short',year:'numeric'});
 renderProjects();
-</script>
-</body>
-</html><script>
-// ── Firebase Init ─────────────────────────────────────────────────────────────
-const firebaseConfig = {
-  apiKey: "AIzaSyBJGdDWiyDnEZe4RXCCuGz6a0-PjYhJrFk",
-  authDomain: "project-hub-35563.firebaseapp.com",
-  projectId: "project-hub-35563",
-  storageBucket: "project-hub-35563.firebasestorage.app",
-  messagingSenderId: "223149391242",
-  appId: "1:223149391242:web:0150284b04ebfcfe9c9c73"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const SESSION_KEY = 'narendra_hub_session';
-const PROJ_KEY = 'narendra_projects_v1';
-
-// ── Session ───────────────────────────────────────────────────────────────────
-function getSession(){ try{ return JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); }catch(e){return null;} }
-function doLogout(){ localStorage.removeItem(SESSION_KEY); window.location.href='login.html'; }
-
-// ── Projects (localStorage) ───────────────────────────────────────────────────
-const DEFAULT_PROJECTS = [
-  {id:'rms',name:'RMS Development',desc:'Risk Management System — margin, MTF, collateral, SQ off and related CRs.',icon:'🔍',color:'#2563eb'},
-  {id:'middleware',name:'Middleware',desc:'Middleware layer CRs — API integrations, data flow, and vendor connectivity.',icon:'🔗',color:'#7c3aed'},
-  {id:'backoffice',name:'Back Office',desc:'Payout processing, sub-broker commissions, reconciliation and back office ops.',icon:'💼',color:'#d97706'},
-  {id:'compliance',name:'Compliance',desc:'SEBI guidelines, DDPI, peak margin reporting and regulatory CRs.',icon:'🛡️',color:'#16a34a'},
-];
-
-function loadProjects(){
-  try{
-    const raw=localStorage.getItem(PROJ_KEY);
-    if(raw){ const p=JSON.parse(raw); if(Array.isArray(p)&&p.length>0){ window.PROJECTS=p; return; } }
-  }catch(e){}
-  window.PROJECTS=JSON.parse(JSON.stringify(DEFAULT_PROJECTS));
-  saveProjects();
-}
-function saveProjects(){ try{localStorage.setItem(PROJ_KEY,JSON.stringify(window.PROJECTS));}catch(e){} }
-
-// ── CR data from Firebase per project ────────────────────────────────────────
-async function getCRsForProject(projId){
-  try{
-    const snap = await db.collection('projects').doc(projId).get();
-    if(snap.exists && snap.data().crs) return snap.data().crs;
-  }catch(e){}
-  return [];
-}
-
-function avgProgress(crs){
-  if(!crs.length) return 0;
-  const STAGES=['Requirement Gathering','Vendor Data Submission','Development','QA / Testing','UAT','Go Live'];
-  const pcts=crs.map(c=>{ if(c.stage==='On Hold') return 0; const idx=STAGES.indexOf(c.stage); return Math.round(((idx>=0?idx:0)+1)/STAGES.length*100); });
-  return Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length);
-}
-function barColor(pct){ if(pct>=80) return '#16a34a'; if(pct>=40) return '#2563eb'; return '#d97706'; }
-
-async function renderProjects(){
-  const grid=document.getElementById('projects-grid');
-  grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:32px;font-size:13px;">⏳ Loading projects...</div>`;
-  let totalCRs=0,inProgress=0,goLive=0;
-  const cards = await Promise.all(window.PROJECTS.map(async proj=>{
-    const crs=await getCRsForProject(proj.id);
-    const total=crs.length, done=crs.filter(c=>c.stage==='Go Live').length;
-    const active=crs.filter(c=>c.stage!=='Go Live'&&c.stage!=='On Hold').length;
-    const onHold=crs.filter(c=>c.stage==='On Hold').length;
-    const pct=avgProgress(crs), fill=barColor(pct);
-    totalCRs+=total; inProgress+=active; goLive+=done;
-    const tags=total>0
-      ?`<span class="proj-tag">✅ ${done} Go Live</span><span class="proj-tag">🔄 ${active} Active</span>${onHold?`<span class="proj-tag">⏸ ${onHold} On Hold</span>`:''}`
-      :`<span class="proj-tag">No CRs yet</span>`;
-    return `<div class="proj-card" onclick="openProject('${proj.id}')">
-      <div class="proj-top"><div class="proj-icon" style="background:${proj.color}22;">${proj.icon}</div><div class="proj-arrow">→</div></div>
-      <div class="proj-name">${proj.name}</div>
-      <div class="proj-desc">${proj.desc}</div>
-      <div class="proj-bar-wrap">
-        <div class="proj-bar-top"><div class="proj-bar-lbl">Progress · ${total} CR${total!==1?'s':''}</div><div class="proj-bar-pct" style="color:${fill};">${pct}%</div></div>
-        <div class="proj-bar-bg"><div class="proj-bar-fill" style="width:${pct}%;background:${fill};"></div></div>
-      </div>
-      <div class="proj-tags">${tags}</div>
-    </div>`;
-  }));
-  grid.innerHTML=cards.join('')+`<div class="proj-card-add" onclick="openModal()"><div class="add-icon">＋</div><div class="add-txt">Add New Project</div></div>`;
-  document.getElementById('s-projects').textContent=window.PROJECTS.length;
-  document.getElementById('s-crs').textContent=totalCRs;
-  document.getElementById('s-inprogress').textContent=inProgress;
-  document.getElementById('s-done').textContent=goLive;
-}
-
-function openProject(id){
-  const proj=window.PROJECTS.find(p=>p.id===id); if(!proj) return;
-  localStorage.setItem('narendra_active_project', JSON.stringify({id:proj.id,name:proj.name,icon:proj.icon,color:proj.color}));
-  window.location.href='index2.html?project='+proj.id;
-}
-
-function openModal(){ document.getElementById('modal').classList.add('open'); }
-function closeModal(){ document.getElementById('modal').classList.remove('open'); }
-function saveProject(){
-  const name=document.getElementById('m-name').value.trim();
-  if(!name){ toast('Project name is required'); return; }
-  const id=name.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+Date.now();
-  window.PROJECTS.push({id,name,desc:document.getElementById('m-desc').value||'No description.',icon:document.getElementById('m-icon').value,color:document.getElementById('m-color').value});
-  saveProjects(); closeModal(); renderProjects(); toast('✓ Project added');
-}
-
-// ── Admin Panel ───────────────────────────────────────────────────────────────
-function openAdminPanel(){ renderAdminPanel(); document.getElementById('admin-modal').style.display='flex'; }
-function closeAdminPanel(){ document.getElementById('admin-modal').style.display='none'; }
-
-async function renderAdminPanel(){
-  const pr=document.getElementById('pending-requests'), al=document.getElementById('all-users-list'), cb=document.getElementById('user-count-badge');
-  pr.innerHTML=al.innerHTML=`<div style="font-size:12px;color:var(--muted);padding:8px 0;">Loading...</div>`;
-  try{
-    const snap=await db.collection('users').get();
-    const users=snap.docs.map(d=>d.data());
-    const session=getSession();
-    if(cb) cb.textContent=`${users.length} user${users.length!==1?'s':''}`;
-    const pending=users.filter(u=>u.requestedEdit&&u.role==='viewer');
-    pr.innerHTML=!pending.length
-      ?`<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px 0;">No pending requests</div>`
-      :pending.map(u=>`<div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:8px;">
-          <div><div style="font-size:13px;font-weight:600;">${u.name} <span style="font-size:11px;color:var(--muted);">@${u.username}</span></div><div style="font-size:11px;color:var(--amber);margin-top:2px;">⏳ Requesting Edit access</div></div>
-          <div style="display:flex;gap:6px;">
-            <button onclick="approveEdit('${u.username}')" style="font-size:11px;font-weight:600;padding:5px 12px;border-radius:6px;border:none;background:var(--green);color:#fff;cursor:pointer;">✓ Approve</button>
-            <button onclick="declineEdit('${u.username}')" style="font-size:11px;font-weight:600;padding:5px 12px;border-radius:6px;border:none;background:var(--red);color:#fff;cursor:pointer;">✕ Decline</button>
-          </div></div>`).join('');
-    const roleColor=r=>r==='admin'?'var(--accent)':r==='editor'?'var(--green)':'var(--muted)';
-    const roleLabel=r=>r==='admin'?'👑 Admin':r==='editor'?'✏️ Editor':'👁 Viewer';
-    al.innerHTML=users.map((u,i)=>`<div style="display:flex;align-items:center;gap:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;">
-      <div style="font-size:12px;font-weight:700;color:var(--muted);min-width:20px;">${i+1}</div>
-      <div style="flex:1;">
-        <div style="font-size:13px;font-weight:600;">${u.name} <span style="font-size:11px;color:var(--muted);">@${u.username}</span></div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
-          <span style="font-size:11px;font-weight:700;color:${roleColor(u.role)};">${roleLabel(u.role)}</span>
-          ${u.requestedEdit?'<span style="font-size:10px;color:var(--amber);background:#fffbeb;padding:2px 7px;border-radius:10px;">Edit Requested</span>':''}
-        </div>
-      </div>
-      ${u.username===session.username
-        ?'<span style="font-size:10px;color:var(--accent);font-weight:700;background:#eff6ff;padding:3px 10px;border-radius:10px;">YOU</span>'
-        :`<div style="display:flex;gap:6px;">
-            <select onchange="changeRole('${u.username}',this.value)" style="font-size:11px;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:#fff;color:var(--text);cursor:pointer;">
-              <option value="viewer" ${u.role==='viewer'?'selected':''}>Viewer</option>
-              <option value="editor" ${u.role==='editor'?'selected':''}>Editor</option>
-              <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
-            </select>
-            <button onclick="adminResetPassword('${u.username}')" style="font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:#fff;color:var(--amber);cursor:pointer;">🔑 Reset</button>
-          </div>`}
-    </div>`).join('');
-  }catch(e){ pr.innerHTML=al.innerHTML=`<div style="color:var(--red);font-size:12px;">Error loading users.</div>`; }
-}
-
-async function approveEdit(username){ await db.collection('users').doc(username.toLowerCase()).update({role:'editor',requestedEdit:false}); renderAdminPanel(); toast('✓ Edit access granted to '+username); }
-async function declineEdit(username){ await db.collection('users').doc(username.toLowerCase()).update({requestedEdit:false}); renderAdminPanel(); toast('✕ Request declined'); }
-async function changeRole(username,newRole){ await db.collection('users').doc(username.toLowerCase()).update({role:newRole,requestedEdit:false}); renderAdminPanel(); toast('✓ Role updated'); }
-async function adminResetPassword(username){
-  const newPass=prompt(`Set new password for @${username}:`);
-  if(!newPass) return;
-  if(newPass.length<6){ toast('⚠ Min 6 characters'); return; }
-  await db.collection('users').doc(username.toLowerCase()).update({password:newPass});
-  toast('✓ Password reset for '+username);
-}
-
-function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
-
-// ── Init ─────────────────────────────────────────────────────────────────────
-const session=getSession();
-if(!session||!session.username){ window.location.href='login.html'; }
-else{
-  document.getElementById('user-name').textContent=session.name||session.username;
-  const rb=document.getElementById('user-role-badge');
-  if(session.role==='admin'){ rb.textContent='Admin'; rb.style.background='#eff6ff'; rb.style.color='var(--accent)'; document.getElementById('admin-btn').style.display='block'; }
-  else if(session.role==='editor'){ rb.textContent='Editor'; rb.style.background='#f0fdf4'; rb.style.color='var(--green)'; }
-  else{ rb.textContent='Viewer'; rb.style.background='#f8fafc'; rb.style.color='var(--muted)'; }
-  loadProjects();
-  document.getElementById('top-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short',year:'numeric'});
-  renderProjects();
-}
 </script>
 </body>
 </html>
