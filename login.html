@@ -96,20 +96,6 @@ h2{font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;}
   .right{padding:28px 24px;}
 }
 </style>
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script>
-firebase.initializeApp({
-  apiKey:"AIzaSyBJGdDWiyDnEZe4RXCCuGz6a0-PjYhJrFk",
-  authDomain:"project-hub-35563.firebaseapp.com",
-  projectId:"project-hub-35563",
-  storageBucket:"project-hub-35563.firebasestorage.app",
-  messagingSenderId:"223149391242",
-  appId:"1:223149391242:web:0150284b04ebfcfe9c9c73"
-});
-const db = firebase.firestore();
-</script>
 </head>
 <body>
 <div class="wrap">
@@ -269,9 +255,9 @@ const db = firebase.firestore();
 </div>
 
 <script>
-const USERS_KEY='narendra_hub_users_v3';
+const USERS_KEY='narendra_hub_users_v1';
 const SESSION_KEY='narendra_hub_session';
-const DEFAULT_USERS=[{username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false,dob:'1990-01-01'},{username:'viewer',password:'View@123',name:'Guest Viewer',role:'viewer',status:'active',requestedEdit:false,dob:'2000-01-01'}];
+const DEFAULT_USERS=[{username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false,dob:'1990-01-01'}];
 
 function getUsers(){try{const r=localStorage.getItem(USERS_KEY);if(r){const u=JSON.parse(r);if(Array.isArray(u)&&u.length>0)return u;}}catch(e){}const u=JSON.parse(JSON.stringify(DEFAULT_USERS));saveUsers(u);return u;}
 function saveUsers(u){try{localStorage.setItem(USERS_KEY,JSON.stringify(u));}catch(e){}}
@@ -290,30 +276,17 @@ function showTab(t){
   }
 }
 
-async function doLogin(){
+function doLogin(){
   const u=document.getElementById('l-user').value.trim();
   const p=document.getElementById('l-pass').value;
   const err=document.getElementById('login-err');
   err.classList.remove('show');
   if(!u||!p){err.textContent='Please enter username and password.';err.classList.add('show');return;}
-  const btn=document.getElementById('login-btn');
-  btn.disabled=true; btn.textContent='Signing in...';
-  try{
-    // Try Firebase first
-    const fbUser=await fbGetUser(u);
-    if(fbUser){
-      if(fbUser.password!==p){err.textContent='Invalid username or password.';err.classList.add('show');btn.disabled=false;btn.textContent='Sign In →';return;}
-      localStorage.setItem(SESSION_KEY,JSON.stringify({username:fbUser.username,name:fbUser.name,role:fbUser.role,loginTime:Date.now()}));
-      window.location.href='index.html'; return;
-    }
-  }catch(e){}
-  // Fallback: localStorage
   const users=getUsers();
   const user=users.find(x=>x.username.toLowerCase()===u.toLowerCase()&&x.password===p);
-  if(!user){err.textContent='Invalid username or password.';err.classList.add('show');btn.disabled=false;btn.textContent='Sign In →';return;}
+  if(!user){err.textContent='Invalid username or password.';err.classList.add('show');return;}
   localStorage.setItem(SESSION_KEY,JSON.stringify({username:user.username,name:user.name,role:user.role,loginTime:Date.now()}));
   window.location.href='index.html';
-  btn.disabled=false; btn.textContent='Sign In →';
 }
 
 let selectedRight='viewer';
@@ -337,9 +310,8 @@ function doRegister(){
   const users=getUsers();
   if(users.find(x=>x.username.toLowerCase()===u.toLowerCase())){err.textContent='Username already taken.';err.classList.add('show');return;}
   const requestedEdit=selectedRight==='editor';
-  const newUser={username:u,password:p,name,role:'viewer',status:'active',requestedEdit,dob,createdAt:new Date().toISOString()};
-  users.push(newUser); saveUsers(users);
-  fbSetUser(newUser); // also save to Firebase
+  users.push({username:u,password:p,name,role:'viewer',status:'active',requestedEdit,dob});
+  saveUsers(users);
   suc.textContent=requestedEdit?'✓ Registered! Login now — Edit access active once Admin approves.':'✓ Account created! You can now login with View access.';
   suc.classList.add('show');
   ['r-name','r-user','r-pass'].forEach(i=>document.getElementById(i).value='');
@@ -349,16 +321,16 @@ function doRegister(){
 }
 
 let fpUsername='';
-async function fpStep1(){
+function fpStep1(){
   const u=document.getElementById('fp-user').value.trim();
   const err=document.getElementById('fp-err1');
   err.classList.remove('show');
   if(!u){err.textContent='Please enter your username.';err.classList.add('show');return;}
-  let user=await fbGetUser(u);
-  if(!user){ const users=getUsers(); user=users.find(x=>x.username.toLowerCase()===u.toLowerCase()); }
+  const users=getUsers();
+  const user=users.find(x=>x.username.toLowerCase()===u.toLowerCase());
   if(!user){err.textContent='No account found with that username.';err.classList.add('show');return;}
-  if(!user.dob){err.textContent='No DOB on file. Contact Admin.';err.classList.add('show');return;}
-  fpUsername=user.username.toLowerCase();
+  if(!user.dob){err.textContent='No Date of Birth on file. Contact Admin to reset your password.';err.classList.add('show');return;}
+  fpUsername=user.username;
   document.getElementById('fp-step1').style.display='none';
   document.getElementById('fp-step2').style.display='block';
 }
@@ -373,7 +345,7 @@ function fpStep2(){
   document.getElementById('fp-step2').style.display='none';
   document.getElementById('fp-step3').style.display='block';
 }
-async function fpStep3(){
+function fpStep3(){
   const np=document.getElementById('fp-newpass').value;
   const cp=document.getElementById('fp-confpass').value;
   const err=document.getElementById('fp-err3'),suc=document.getElementById('fp-suc3');
@@ -381,7 +353,9 @@ async function fpStep3(){
   if(!np||!cp){err.textContent='Please fill both fields.';err.classList.add('show');return;}
   if(np.length<6){err.textContent='Password must be at least 6 characters.';err.classList.add('show');return;}
   if(np!==cp){err.textContent='Passwords do not match.';err.classList.add('show');return;}
-  await fbUpdateUser(fpUsername,{password:np});
+  const users=getUsers();
+  const user=users.find(x=>x.username===fpUsername);
+  if(user){user.password=np;saveUsers(users);}
   suc.textContent='✓ Password reset successfully! Redirecting to login...';
   suc.classList.add('show');
   document.getElementById('fp-newpass').value='';

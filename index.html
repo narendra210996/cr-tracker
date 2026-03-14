@@ -96,20 +96,6 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
   .wrapper{padding:20px 16px;}
 }
 </style>
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script>
-firebase.initializeApp({
-  apiKey:"AIzaSyBJGdDWiyDnEZe4RXCCuGz6a0-PjYhJrFk",
-  authDomain:"project-hub-35563.firebaseapp.com",
-  projectId:"project-hub-35563",
-  storageBucket:"project-hub-35563.firebasestorage.app",
-  messagingSenderId:"223149391242",
-  appId:"1:223149391242:web:0150284b04ebfcfe9c9c73"
-});
-const db = firebase.firestore();
-</script>
 </head>
 <body>
 <div class="wrapper">
@@ -366,7 +352,7 @@ function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 const SESSION_KEY = 'narendra_hub_session';
-const USERS_KEY   = 'narendra_hub_users_v3';
+const USERS_KEY   = 'narendra_hub_users_v1';
 
 function getSession(){ try{ return JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); }catch(e){return null;} }
 function getUsers(){ try{ const r=localStorage.getItem(USERS_KEY); if(r){const u=JSON.parse(r);if(Array.isArray(u)&&u.length>0)return u;} }catch(e){} return [{username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false}]; }
@@ -383,8 +369,8 @@ function openAdminPanel(){
 }
 function closeAdminPanel(){ document.getElementById('admin-modal').style.display='none'; }
 
-async function renderAdminPanel(){
-  const users = await fbGetAllUsers();
+function renderAdminPanel(){
+  const users = getUsers();
   const pending = users.filter(u=>u.requestedEdit && u.role==='viewer');
 
   // Update count badge
@@ -436,14 +422,31 @@ async function renderAdminPanel(){
     </div>`).join('');
 }
 
-async function approveEdit(username){ await fbUpdateUser(username,{role:'editor',requestedEdit:false}); renderAdminPanel(); toast('✓ Edit access granted to '+username); }
-async function declineEdit(username){ await fbUpdateUser(username,{requestedEdit:false}); renderAdminPanel(); toast('✕ Request declined'); }
-async function changeRole(username,newRole){ await fbUpdateUser(username,{role:newRole,requestedEdit:false}); renderAdminPanel(); toast('✓ Role updated'); }
-async function adminResetPassword(username){
-  const p=prompt('Set new password for @'+username+':');
-  if(!p) return;
-  if(p.length<6){toast('⚠ Min 6 characters');return;}
-  await fbUpdateUser(username,{password:p}); toast('✓ Password reset for '+username);
+function approveEdit(username){
+  const users=getUsers();
+  const u=users.find(x=>x.username===username);
+  if(u){u.role='editor';u.requestedEdit=false;}
+  saveUsers(users); renderAdminPanel(); toast('✓ Edit access granted to '+username);
+}
+function declineEdit(username){
+  const users=getUsers();
+  const u=users.find(x=>x.username===username);
+  if(u){u.requestedEdit=false;}
+  saveUsers(users); renderAdminPanel(); toast('✕ Request declined for '+username);
+}
+function changeRole(username, newRole){
+  const users=getUsers();
+  const u=users.find(x=>x.username===username);
+  if(u){u.role=newRole; if(newRole==='editor'||newRole==='admin') u.requestedEdit=false;}
+  saveUsers(users); renderAdminPanel(); toast('✓ Role updated for '+username);
+}
+function adminResetPassword(username){
+  const newPass = prompt(`Set new password for @${username}:`);
+  if(!newPass) return;
+  if(newPass.length<6){ toast('⚠ Password must be at least 6 characters'); return; }
+  const users=getUsers();
+  const u=users.find(x=>x.username===username);
+  if(u){ u.password=newPass; saveUsers(users); toast('✓ Password reset for '+username); }
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
