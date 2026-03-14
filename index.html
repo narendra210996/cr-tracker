@@ -3,616 +3,333 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>CR Tracker — Risk Module</title>
+<title>Project Dashboard — Narendra</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#f4f6fb;--surface:#ffffff;--surface2:#f0f3fa;--border:#e2e8f0;
-  --text:#1e2235;--muted:#64748b;--accent:#2563eb;--green:#059669;
-  --amber:#d97706;--red:#dc2626;--purple:#7c3aed;--radius:10px;
-  --shadow:0 1px 6px rgba(30,34,53,.08);
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2333;--border:#2a2f42;
+  --text:#e8eaf0;--muted:#6b7280;--accent:#4f8ef7;--green:#34d399;
+  --amber:#fbbf24;--red:#f87171;--purple:#a78bfa;
 }
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:28px 32px;}
-.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
-.page-header h1{font-size:22px;font-weight:700;color:var(--text);}
-.page-header .sub{font-size:12px;color:var(--muted);margin-top:4px;}
-.hdr-actions{display:flex;gap:8px;flex-wrap:wrap;}
-.btn{font-size:12px;font-weight:600;padding:8px 16px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
-.btn:hover{background:var(--surface2);border-color:#c8d3e8;}
-.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);}
-.btn-primary:hover{background:#1d4ed8;border-color:#1d4ed8;}
-.btn-green{background:#059669;color:#fff;border-color:#059669;}
-.btn-green:hover{background:#047857;border-color:#047857;}
-.btn-delete{background:#fff;color:var(--red);border-color:#fca5a5;}
-.btn-delete:hover{background:#fee2e2;border-color:var(--red);}
-/* Stage pills */
-.stage-row{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:24px;}
-.spill{border-radius:10px;padding:12px 10px;text-align:center;cursor:pointer;border:2px solid transparent;transition:all .15s;user-select:none;}
-.spill:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.1);}
-.spill.active{border-color:#1e2235;box-shadow:0 4px 12px rgba(0,0,0,.12);}
-.spill .sn{font-size:22px;font-weight:700;line-height:1;}
-.spill .sl{font-size:10px;font-weight:600;margin-top:4px;text-transform:uppercase;letter-spacing:.04em;}
-.sp0{background:#ede9fe;}.sp0 .sn,.sp0 .sl{color:#5b21b6;}
-.sp1{background:#fef3c7;}.sp1 .sn,.sp1 .sl{color:#92400e;}
-.sp2{background:#dbeafe;}.sp2 .sn,.sp2 .sl{color:#1e40af;}
-.sp3{background:#fce7f3;}.sp3 .sn,.sp3 .sl{color:#9d174d;}
-.sp4{background:#d1fae5;}.sp4 .sn,.sp4 .sl{color:#065f46;}
-.sp5{background:#cffafe;}.sp5 .sn,.sp5 .sl{color:#0e7490;}
-.sp-hold{background:#f1f5f9;}.sp-hold .sn,.sp-hold .sl{color:#475569;}
-/* Filter */
-.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
-.filter-bar input,.filter-bar select{font-size:12px;padding:7px 11px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;transition:border .15s;}
-.filter-bar input:focus,.filter-bar select:focus{border-color:var(--accent);}
-.filter-bar input{flex:1;min-width:180px;}
-.filter-bar select{min-width:130px;}
-.tag{font-size:11px;color:var(--muted);padding:4px 10px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);}
-/* Add form */
-.add-form-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:18px;display:none;box-shadow:var(--shadow);}
-.add-form-wrap.open{display:block;}
-.form-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;}
-.form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;}
-.form-grid input,.form-grid select,.form-grid textarea{font-size:12px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;width:100%;font-family:inherit;transition:border .15s;}
-.form-grid input:focus,.form-grid select:focus,.form-grid textarea:focus{border-color:var(--accent);}
-.form-grid textarea{grid-column:1/-1;resize:vertical;min-height:60px;}
-.form-btns{display:flex;gap:8px;}
-/* Detail panel */
-.detail-panel{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:18px;display:none;box-shadow:var(--shadow);}
-.detail-panel.open{display:block;}
-.dp-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
-.dp-title{font-size:17px;font-weight:700;color:var(--text);line-height:1.3;}
-.dp-id{font-size:12px;color:var(--muted);margin-top:4px;}
-.close-btn{background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;line-height:1;padding:0 4px;}
-.close-btn:hover{color:var(--text);}
-.dp-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
-.dp-field .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
-.dp-field .val{font-size:13px;font-weight:600;color:var(--text);}
-.desc-box{background:var(--surface2);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--text);line-height:1.65;margin-bottom:16px;}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
-.info-box{border:1.5px solid var(--border);border-radius:8px;padding:12px 14px;}
-.info-box .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
-.info-box .txt{font-size:12px;color:var(--text);line-height:1.55;}
-/* Pipeline */
-.pipe-label-row{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;font-weight:600;}
-.pipeline{display:flex;align-items:center;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;}
-.pipe-step{display:flex;flex-direction:column;align-items:center;flex:1;min-width:60px;}
-.pipe-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
-.pipe-dot.done{background:var(--green);color:#fff;}
-.pipe-dot.current{background:var(--accent);color:#fff;box-shadow:0 0 0 4px #dbeafe;}
-.pipe-dot.pending{background:var(--surface2);color:var(--muted);border:2px solid var(--border);}
-.pipe-lbl{font-size:9px;color:var(--muted);margin-top:6px;text-align:center;font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
-.pipe-line{flex:1;height:2px;margin-bottom:22px;}
-.pipe-line.done{background:var(--green);}
-.pipe-line.pending{background:var(--border);}
-/* Timeline */
-.tl-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
-.tl-lbl{font-size:11px;color:var(--muted);width:56px;flex-shrink:0;font-weight:600;}
-.tl-bar-bg{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;}
-.tl-bar{height:100%;border-radius:4px;transition:width .4s;}
-.tl-date{font-size:11px;color:var(--muted);width:80px;text-align:right;flex-shrink:0;}
-/* UAT */
-.uat-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
-.uat-row:last-child{border-bottom:none;}
-.uat-check{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:700;}
-.uat-yes{background:var(--green);color:#fff;}
-.uat-no{background:var(--surface2);border:2px solid var(--border);}
-.uat-txt{flex:1;font-size:13px;color:var(--text);}
-.uat-by{font-size:11px;color:var(--muted);}
-/* Notes */
-.notes-empty{font-size:12px;color:var(--muted);font-style:italic;padding:6px 2px;}
-.note-entry{background:#fffbeb;border-left:3px solid var(--amber);border-radius:0 7px 7px 0;padding:9px 12px;margin-bottom:8px;}
-.note-entry .note-text{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;word-break:break-word;}
-.note-entry .note-meta{font-size:10px;color:var(--muted);margin-top:5px;}
-/* Documents */
-.doc-upload-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
-.btn-upload{background:#f0f7ff;color:var(--accent);border-color:#bfdbfe;cursor:pointer;font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1.5px solid #bfdbfe;display:inline-flex;align-items:center;gap:6px;transition:all .15s;}
-.btn-upload:hover{background:#dbeafe;border-color:var(--accent);}
-.doc-hint{font-size:11px;color:var(--muted);font-style:italic;}
-.doc-item{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:8px;}
-.doc-icon{font-size:20px;flex-shrink:0;}
-.doc-info{flex:1;min-width:0;}
-.doc-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.doc-meta{font-size:10px;color:var(--muted);margin-top:2px;}
-.doc-actions{display:flex;gap:6px;flex-shrink:0;}
-.doc-btn{font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;transition:all .15s;}
-.doc-btn:hover{background:var(--surface2);}
-.doc-btn-del{color:var(--red);border-color:#fca5a5;}
-.doc-btn-del:hover{background:#fee2e2;}
-.docs-empty{font-size:12px;color:var(--muted);font-style:italic;padding:4px 2px;margin-bottom:8px;}
-/* Edit */
-.edit-wrap{border-top:1.5px solid var(--border);padding-top:14px;margin-top:4px;}
-.edit-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;font-weight:600;}
-.edit-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
-.edit-row select,.edit-row input{font-size:12px;padding:6px 10px;border:1.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);outline:none;}
-.edit-row input{flex:1;min-width:130px;}
-.notes-ta{width:100%;font-size:12px;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;resize:vertical;min-height:52px;font-family:inherit;margin-bottom:10px;}
-.notes-ta:focus{border-color:var(--accent);}
-.save-note{font-size:11px;color:var(--muted);font-style:italic;}
-/* Table */
-.table-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
-.tbl-scroll{overflow-x:auto;max-height:460px;}
-table{width:100%;border-collapse:collapse;font-size:12px;}
-thead th{position:sticky;top:0;background:#f8faff;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;z-index:2;}
-td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
-tr:last-child td{border-bottom:none;}
-tbody tr{cursor:pointer;transition:background .1s;}
-tbody tr:hover{background:#f8faff;}
-tbody tr.sel{background:#eff6ff;}
-.cr-id{font-size:11px;font-weight:700;color:var(--muted);font-family:monospace;}
-.cr-title{font-size:12px;font-weight:600;color:var(--text);}
-.prog-cell{display:flex;align-items:center;gap:6px;}
-.prog-bg{flex:1;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;min-width:50px;}
-.prog-bar{height:100%;border-radius:3px;}
-.prog-pct{font-size:10px;color:var(--muted);min-width:26px;}
-.overdue-flag{color:var(--red);font-weight:700;}
-/* Badges */
-.badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;display:inline-block;white-space:nowrap;letter-spacing:.02em;}
-.b-high{background:#fee2e2;color:#991b1b;}.b-med{background:#fef3c7;color:#92400e;}.b-low{background:#d1fae5;color:#065f46;}
-.b-todo{background:#fee2e2;color:#991b1b;}.b-done{background:#d1fae5;color:#065f46;}
-.b-req{background:#ede9fe;color:#5b21b6;}.b-ven{background:#fef3c7;color:#92400e;}
-.b-dev{background:#dbeafe;color:#1e40af;}.b-qa{background:#fce7f3;color:#9d174d;}
-.b-uat{background:#d1fae5;color:#065f46;}.b-gl{background:#cffafe;color:#0e7490;}
-.b-hold{background:#f1f5f9;color:#475569;border:1.5px solid #cbd5e1;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:0;}
+
+/* Background grid */
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:40px 40px;opacity:.3;pointer-events:none;z-index:0;}
+
+.wrapper{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:48px 32px;}
+
+/* Header */
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:52px;}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-dot{width:10px;height:10px;background:var(--accent);border-radius:50%;box-shadow:0 0 12px var(--accent);}
+.logo-text{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;}
+.top-date{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--border);padding:5px 12px;border-radius:20px;}
+
+/* Hero */
+.hero{margin-bottom:52px;}
+.hero-label{font-size:11px;font-weight:600;color:var(--accent);letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px;}
+.hero-title{font-size:38px;font-weight:700;color:var(--text);line-height:1.15;margin-bottom:10px;}
+.hero-title span{color:var(--accent);}
+.hero-sub{font-size:14px;color:var(--muted);line-height:1.7;}
+
+/* Summary strip */
+.summary-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:48px;}
+.sum-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
+.sum-val{font-size:28px;font-weight:700;color:var(--text);line-height:1;}
+.sum-lbl{font-size:11px;color:var(--muted);margin-top:6px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;}
+.sum-card.ac .sum-val{color:var(--accent);}
+.sum-card.gr .sum-val{color:var(--green);}
+.sum-card.am .sum-val{color:var(--amber);}
+.sum-card.pu .sum-val{color:var(--purple);}
+
+/* Section heading */
+.sec-head{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.sec-head-line{flex:1;height:1px;background:var(--border);}
+.sec-head-txt{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;}
+
+/* Project cards */
+.projects-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:40px;}
+.proj-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.proj-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(79,142,247,.06) 0%,transparent 60%);opacity:0;transition:opacity .2s;}
+.proj-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 32px rgba(79,142,247,.12);}
+.proj-card:hover::before{opacity:1;}
+.proj-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;}
+.proj-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.proj-arrow{font-size:18px;color:var(--muted);transition:all .2s;}
+.proj-card:hover .proj-arrow{color:var(--accent);transform:translateX(3px);}
+.proj-name{font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.proj-desc{font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:18px;}
+.proj-stats{display:flex;gap:16px;margin-bottom:14px;}
+.proj-stat{text-align:center;}
+.proj-stat-val{font-size:18px;font-weight:700;color:var(--text);}
+.proj-stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;}
+.proj-bar-wrap{margin-bottom:8px;}
+.proj-bar-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.proj-bar-lbl{font-size:11px;color:var(--muted);}
+.proj-bar-pct{font-size:12px;font-weight:700;}
+.proj-bar-bg{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;border:1px solid var(--border);}
+.proj-bar-fill{height:100%;border-radius:3px;transition:width .6s ease;}
+.proj-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
+.proj-tag{font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;border:1px solid var(--border);color:var(--muted);}
+
+/* Add project card */
+.proj-card-add{background:transparent;border:1px dashed var(--border);border-radius:14px;padding:24px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:200px;}
+.proj-card-add:hover{border-color:var(--accent);background:rgba(79,142,247,.04);}
+.proj-card-add .add-icon{font-size:28px;color:var(--muted);}
+.proj-card-add .add-txt{font-size:13px;color:var(--muted);font-weight:500;}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:460px;max-width:90vw;}
+.modal-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:20px;}
+.modal-grid{display:grid;gap:12px;margin-bottom:20px;}
+.modal-grid input,.modal-grid select,.modal-grid textarea{font-size:13px;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);outline:none;width:100%;font-family:inherit;transition:border .15s;}
+.modal-grid input:focus,.modal-grid select:focus,.modal-grid textarea:focus{border-color:var(--accent);}
+.modal-grid select option{background:var(--surface);}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;}
+.mbtn{font-size:12px;font-weight:600;padding:8px 18px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;transition:all .15s;}
+.mbtn:hover{background:var(--border);}
+.mbtn-primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+.mbtn-primary:hover{background:#3a7de8;}
+
 /* Toast */
-.toast{position:fixed;bottom:24px;right:24px;background:#1e2235;color:#fff;font-size:12px;font-weight:600;padding:10px 18px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;z-index:999;}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);color:var(--text);border:1px solid var(--border);font-size:12px;font-weight:600;padding:10px 18px;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.4);opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;z-index:999;}
 .toast.show{opacity:1;transform:translateY(0);}
+
+@media(max-width:640px){
+  .projects-grid{grid-template-columns:1fr;}
+  .summary-strip{grid-template-columns:1fr 1fr;}
+  .hero-title{font-size:26px;}
+  .wrapper{padding:28px 18px;}
+}
 </style>
 </head>
 <body>
+<div class="wrapper">
+  <div class="top-bar">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      <div class="logo-text">Narendra · Project Hub</div>
+    </div>
+    <div class="top-date" id="top-date"></div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-label">BA Dashboard</div>
+    <div class="hero-title">All Projects,<br><span>One Place.</span></div>
+    <div class="hero-sub">Click any project to view its CR Tracker — track stages, UAT, delivery dates and progress.</div>
+  </div>
+
+  <div class="summary-strip">
+    <div class="sum-card ac"><div class="sum-val" id="s-projects">0</div><div class="sum-lbl">Total Projects</div></div>
+    <div class="sum-card gr"><div class="sum-val" id="s-crs">0</div><div class="sum-lbl">Total CRs</div></div>
+    <div class="sum-card am"><div class="sum-val" id="s-inprogress">0</div><div class="sum-lbl">In Progress</div></div>
+    <div class="sum-card pu"><div class="sum-val" id="s-done">0</div><div class="sum-lbl">Go Live</div></div>
+  </div>
+
+  <div class="sec-head">
+    <div class="sec-head-txt">Your Projects</div>
+    <div class="sec-head-line"></div>
+  </div>
+
+  <div class="projects-grid" id="projects-grid"></div>
+</div>
+
+<!-- Add Project Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title">Add New Project</div>
+    <div class="modal-grid">
+      <input type="text" id="m-name" placeholder="Project name  e.g. Settlement Module"/>
+      <input type="text" id="m-desc" placeholder="Short description"/>
+      <select id="m-icon">
+        <option value="🏗️">🏗️ Development</option>
+        <option value="📊">📊 Reporting</option>
+        <option value="⚙️">⚙️ Operations</option>
+        <option value="🛡️">🛡️ Compliance</option>
+        <option value="📱">📱 App</option>
+        <option value="🔗">🔗 Middleware</option>
+        <option value="💼">💼 Back Office</option>
+        <option value="🔍">🔍 Risk</option>
+      </select>
+      <select id="m-color">
+        <option value="#4f8ef7">Blue</option>
+        <option value="#34d399">Green</option>
+        <option value="#fbbf24">Amber</option>
+        <option value="#a78bfa">Purple</option>
+        <option value="#f87171">Red</option>
+        <option value="#22d3ee">Cyan</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="mbtn" onclick="closeModal()">Cancel</button>
+      <button class="mbtn mbtn-primary" onclick="saveProject()">Add Project</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
-<div class="page-header">
-  <div>
-    <h1>CR Tracker — Risk Module</h1>
-    <div class="sub">Vendor: Kambala &nbsp;·&nbsp; RMS Feature Development &nbsp;·&nbsp; <span id="hdr-date"></span></div>
-  </div>
-  <div class="hdr-actions">
-    <button class="btn btn-green" onclick="exportCSV()">⬇ Export to Excel</button>
-    <button class="btn" onclick="importJSON()">📂 Import Backup</button>
-    <button class="btn" onclick="exportJSON()">💾 Save Backup</button>
-    <button class="btn btn-primary" onclick="toggleAddForm()">+ New CR</button>
-  </div>
-</div>
-
-<div class="stage-row" id="stage-row"></div>
-
-<div class="filter-bar">
-  <input type="text" id="search" placeholder="🔍  Search CR ID or title..." oninput="renderTable()"/>
-  <select id="f-priority" onchange="renderTable()">
-    <option value="">All priorities</option>
-    <option>High</option><option>Medium</option><option>Low</option>
-  </select>
-  <select id="f-stage" onchange="renderTable()">
-    <option value="">All stages</option>
-    <option>Requirement Gathering</option>
-    <option>Vendor Data Submission</option>
-    <option>Development</option>
-    <option>QA / Testing</option>
-    <option>UAT</option>
-    <option>Go Live</option>
-    <option>On Hold</option>
-  </select>
-  <select id="f-uat" onchange="renderTable()">
-    <option value="">UAT: All</option>
-    <option value="Yes">Signed Off</option>
-    <option value="No">Pending</option>
-  </select>
-  <span class="tag" id="result-count"></span>
-</div>
-
-<div class="add-form-wrap" id="add-form">
-  <div class="form-title">Add New CR</div>
-  <div class="form-grid">
-    <input type="text" id="nc-id" placeholder="CR ID  e.g. CR-030"/>
-    <input type="text" id="nc-title" placeholder="CR Title"/>
-    <select id="nc-pri"><option>High</option><option>Medium</option><option>Low</option></select>
-    <input type="text" id="nc-requester" placeholder="Requester / Stakeholder"/>
-    <input type="text" id="nc-delivery" placeholder="Expected delivery  e.g. Apr 20"/>
-    <select id="nc-stage">
-      <option>Requirement Gathering</option><option>Vendor Data Submission</option>
-      <option>Development</option><option>QA / Testing</option>
-      <option>UAT</option><option>Go Live</option><option>On Hold</option>
-    </select>
-    <textarea id="nc-desc" placeholder="Description, logic & vendor data required..."></textarea>
-  </div>
-  <div class="form-btns">
-    <button class="btn btn-primary" onclick="saveCR()">Save CR</button>
-    <button class="btn" onclick="toggleAddForm()">Cancel</button>
-  </div>
-</div>
-
-<div class="detail-panel" id="detail-panel">
-  <div class="dp-header">
-    <div><div class="dp-title" id="dp-title"></div><div class="dp-id" id="dp-id"></div></div>
-    <button class="close-btn" onclick="closeDetail()">×</button>
-  </div>
-  <div class="dp-meta" id="dp-meta"></div>
-  <div class="desc-box" id="dp-desc"></div>
-  <div class="two-col">
-    <div class="info-box"><div class="lbl">Previous config (31/12/25)</div><div class="txt" id="dp-prev"></div></div>
-    <div class="info-box"><div class="lbl">New config / logic required</div><div class="txt" id="dp-new"></div></div>
-  </div>
-  <div class="pipe-label-row">Stage progress</div>
-  <div class="pipeline" id="dp-pipeline"></div>
-  <div class="pipe-label-row">Timeline</div>
-  <div id="dp-timeline" style="margin-bottom:16px;"></div>
-  <div class="pipe-label-row">UAT sign-off</div>
-  <div id="dp-uat" style="margin-bottom:16px;"></div>
-  <div class="pipe-label-row">Notes & follow-up actions</div>
-  <div id="dp-notes-display" style="margin-bottom:16px;min-height:36px;"></div>
-  <div class="pipe-label-row">Attached documents</div>
-  <div id="dp-docs-display" style="margin-bottom:10px;"></div>
-  <div class="doc-upload-row">
-    <label class="btn-upload" for="doc-file-input">📎 Attach document</label>
-    <input type="file" id="doc-file-input" accept=".docx,.doc,.pdf,.xlsx,.xls,.pptx,.txt" style="display:none;" onchange="attachDocument(event)"/>
-    <span class="doc-hint">Supports .docx, .pdf, .xlsx, .pptx, .txt — stored in browser memory</span>
-  </div>
-  <div class="edit-wrap">
-    <div class="edit-lbl">Update this CR</div>
-    <div class="edit-row">
-      <select id="e-stage">
-        <option>Requirement Gathering</option><option>Vendor Data Submission</option>
-        <option>Development</option><option>QA / Testing</option>
-        <option>UAT</option><option>Go Live</option><option>On Hold</option>
-      </select>
-      <select id="e-priority"><option>High</option><option>Medium</option><option>Low</option></select>
-      <input type="text" id="e-delivery" placeholder="Expected delivery date..."/>
-      <select id="e-uat"><option value="No">UAT: Pending</option><option value="Yes">UAT: Signed Off</option></select>
-    </div>
-    <textarea class="notes-ta" id="e-notes" placeholder="Type a new note or follow-up action... (each save adds a timestamped entry above)"></textarea>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <button class="btn btn-primary" onclick="saveCREdit()">Save changes</button>
-      <button class="btn" onclick="closeDetail()">Cancel</button>
-      <button class="btn btn-delete" onclick="deleteCR()">🗑 Delete CR</button>
-      <span class="save-note">Changes save automatically to browser memory</span>
-    </div>
-  </div>
-</div>
-
-<div class="table-card">
-  <div class="tbl-scroll">
-    <table>
-      <thead><tr>
-        <th style="width:76px;">CR ID</th><th>Title</th>
-        <th style="width:100px;">Requester</th><th style="width:76px;">Priority</th>
-        <th style="width:140px;">Stage</th><th style="width:100px;">Delivery</th>
-        <th style="width:76px;">UAT</th><th style="width:100px;">Progress</th>
-      </tr></thead>
-      <tbody id="cr-tbody"></tbody>
-    </table>
-  </div>
-</div>
-
-<input type="file" id="file-import" accept=".json" style="display:none;" onchange="handleImport(event)"/>
-
 <script>
-const STAGES    = ['Requirement Gathering','Vendor Data Submission','Development','QA / Testing','UAT','Go Live'];
-const STAGE_SH  = ['Req','Vendor','Dev','QA','UAT','Go Live'];
-const STAGE_IDX = Object.fromEntries(STAGES.map((s,i)=>[s,i]));
-const STAGE_CLS = ['b-req','b-ven','b-dev','b-qa','b-uat','b-gl'];
-const SPILL_CLS = ['sp0','sp1','sp2','sp3','sp4','sp5'];
-const STORAGE_KEY = 'vatsal_cr_v4';
+const PROJ_KEY = 'narendra_projects_v1';
 
-const DEFAULT_CRS = [
-  {id:'CR-002',title:'Separate Validation – Long & Short Option',priority:'High',stage:'Requirement Gathering',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Separate validation for long & short option based on volume and open interest.',prev:'Not available',newCfg:'To be developed by Kambala'},
-  {id:'CR-006',title:'T1 CNC Sale – Collateral & Margin Req.',priority:'High',stage:'Vendor Data Submission',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Not considering collateral value for T1 CNC sale & margin req (MAX of 20% OR VAR/ELM). T1 holding sell check: Total available margin + Holding value > (VAR+ELM). If positive, allow Holding SQ off order.',prev:'Not available',newCfg:'Allow SQ off if Total margin + Holding > VAR+ELM'},
-  {id:'CR-007',title:'Auto CKT Square-off & SQ Off Position Report',priority:'High',stage:'Development',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Auto circuit square-off and square-off position report as per MACM requirement.',prev:'To be developed per MACM',newCfg:'Develop as per MACM requirement'},
-  {id:'CR-011',title:'Trade-to-Trade – Non-Netting in INVOCATION File',priority:'Medium',stage:'Requirement Gathering',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Trade to trade position netted in INVOCATION file. Non-netting logic for T2T series required.',prev:'Not available',newCfg:'Non-netting logic for T2T series in reports'},
-  {id:'CR-014',title:'Security-wise QL Validation – NSE+BSE (Interops)',priority:'High',stage:'Requirement Gathering',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Security-wise QL template validation with combined exchange level validation (NSE+BSE). QL template already shared.',prev:'Not available',newCfg:'Script-wise validation to be built per QL template'},
-  {id:'CR-016',title:'Margin Shortfall Report – Without Hedge',priority:'Medium',stage:'Development',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Additional margin shortfall report without considering hedge position, based on selected expiry date.',prev:'Available – check & provide report',newCfg:'Report for margin shortfall without hedge benefit'},
-  {id:'CR-019',title:'Instant Margin Benefit – Pledge During Day',priority:'High',stage:'Vendor Data Submission',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Instant margin benefit for shares pledged during the day as a config in System Parameters.',prev:'To be built on Middleware',newCfg:'System parameter config for intraday pledge benefit'},
-  {id:'CR-022',title:'Hide Unapproved Stocks for Margin Pledge',priority:'Medium',stage:'Requirement Gathering',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Unapproved stocks should not appear for margin pledge. Haircut at script level via RMS exe.',prev:'To be checked & developed',newCfg:'Haircut at script level via RMS exe'},
-  {id:'CR-027',title:'Scrip-wise MTF Exposure Validation – Broker Level',priority:'High',stage:'Development',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Scrip-wise (Interops level) MTF exposure validation at broker level.',prev:'Not available',newCfg:'MTF exposure validation at broker + interops level'},
-  {id:'CR-028',title:'Margin Shortfall – Regulatory MTF Margin Column',priority:'High',stage:'Development',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Separate column for regulatory MTF margin: VAR+3xELM (FNO) or 5xELM (Non-FNO). Logic shared by MACM.',prev:'Not available',newCfg:'VAR+3xELM(FNO) / 5xELM(Non-FNO) per MACM logic'},
-  {id:'CR-029',title:'Margin Shortfall Fetch – Request Based',priority:'Medium',stage:'Requirement Gathering',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Request-based fetching of margin shortfall data for current date and back-dated.',prev:'Not available',newCfg:'Same as CR-028. Support current date + back-date fetch'},
-  {id:'CR-032',title:'Peak Margin Shortfall – MTF Buyback Handling',priority:'High',stage:'Development',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Handle peak margin shortfall for MTF clients who sell and buyback before market close. Block 20% peak margin on buyback.',prev:'To be developed',newCfg:'Block 20% peak margin when trying buyback for MTF'},
-  {id:'CR-033',title:'Upfront Margin – BTST Sale in MTF',priority:'High',stage:'Requirement Gathering',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Upfront margin on selling BTST in MTF. Allow sale if MTF% > 40. Reduce MTM loss from available limit.',prev:'Not available',newCfg:'Allow sale if MTF%>40. Reduce MTM loss from available limit'},
-  {id:'CR-035',title:'Pledge Securities Sale – Admin POA Override',priority:'Medium',stage:'Requirement Gathering',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Allow admin to sell pledge/collateral without POA validation.',prev:'To be developed',newCfg:'Admin override: sell pledge/collateral without POA'},
-  {id:'CR-036',title:'Margin Blocking – BTST CNC Sale ASM Stock',priority:'High',stage:'Development',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Margin blocking on selling BTST scrip in CNC for ASM stock. MAX(20%, VAR/ELM).',prev:'Not available',newCfg:'MAX(20%, VAR/ELM) for ASM scrip BTST CNC sale'},
-  {id:'CR-039',title:'MTF Qty Modification – Admin NET Position Window',priority:'Medium',stage:'Development',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Front-end recomputation option for per-client margin in NET position window.',prev:'Partially available – incremental file upload exists',newCfg:'Front-end per-client margin recomputation option'},
-  {id:'CR-040',title:'CUSA – Exclude from Limit, Include in MTM Alert',priority:'Medium',stage:'Requirement Gathering',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'CUSA (Mrg stock) not to be considered for Limit but allowed for MTM alert.',prev:'To be developed',newCfg:'Exclude CUSA from limit, include in MTM alert'},
-  {id:'CR-047',title:'Market Price Protection (MPP) – Slab + Exceptions',priority:'High',stage:'Requirement Gathering',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Markup % based on LTP slab by instrument type. Apply to all orders except intraday auto SQ off.',prev:'Not available',newCfg:'Slab-based LTP markup per instrument. Exceptions for auto SQ off'},
-  {id:'CR-050',title:'Collateral Valuation – Lower of LTP or Close Price',priority:'Medium',stage:'Development',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Collateral based on lower of LTP or close price. If close=0, use previous close or LTP (lower).',prev:'To be developed',newCfg:'Lower of LTP/Close. If close=0 use prev close or LTP'},
-  {id:'CR-053',title:'Max of Exchange or Basket Margin – Intraday/MTF',priority:'High',stage:'Development',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Charge MAX(Basket margin, VAR+ELM+Adhoc) for INTRADAY/MTF/CO equity segment.',prev:'Not available',newCfg:'MAX(Basket margin, VAR+ELM+Adhoc)'},
-  {id:'CR-055',title:'Multi-Client SQ Off via File Upload',priority:'Medium',stage:'Requirement Gathering',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Select positions/open orders for multiple clients via file upload for immediate SQ off.',prev:'Not available',newCfg:'Exclusion list feature in position book for multi-client SQ off'},
-  {id:'CR-071',title:'Collateral Config – With/Without Haircut MTM Alert',priority:'Medium',stage:'Requirement Gathering',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Config to consider collateral with or without haircut for MTM alert. Develop for CUSA + BTST.',prev:'Only post-haircut collateral currently',newCfg:'Config for CUSA + BTST in MTM alert'},
-  {id:'CR-072',title:'Gross Sold Holding – 100% CFS for MTM Alert',priority:'Medium',stage:'Requirement Gathering',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Gross sold holding receivable at 100% CFS for MTM alert, irrespective of limit config.',prev:'Not available',newCfg:'100% CFS for sold holding in MTM alert'},
-  {id:'CR-074',title:'MTF to Delivery – Settled Qty Only',priority:'Medium',stage:'Development',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'MTF to Delivery conversion only for settled qty. Block all other MTF conversion.',prev:'Not available',newCfg:'Block MTF conversion except for settled qty'},
-  {id:'CR-077',title:'100% Margin – MTF Buy if CFS from Same Scrip',priority:'High',stage:'Requirement Gathering',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Charge 100% margin for MTF buy if client limit is against CFS from same scrip (cross product).',prev:'Not available',newCfg:'100% margin for cross product trade of same scrip'},
-  {id:'CR-101',title:'AMO Order Modification – Allow Price Change After Market Hours',priority:'High',stage:'Development',requester:'Trading Desk',planned:'Apr 10, 2026',uat:'No',uatBy:'',notes:'',desc:'Currently AMO (After Market Orders) cannot be modified once placed. Allow clients to modify price and quantity of AMO orders until market opens (9:00 AM). Admin should have override to cancel any AMO in bulk.',prev:'AMO modification not supported – cancel and re-place required',newCfg:'Allow price/qty modification of AMO up to 9:00 AM. Bulk cancel option for admin.'},
-  {id:'CR-102',title:'Basket Order – Save & Reuse Templates',priority:'Medium',stage:'Requirement Gathering',requester:'Product Team',planned:'Apr 20, 2026',uat:'No',uatBy:'',notes:'',desc:'Allow clients to save a set of orders as a basket template (e.g. Nifty 50 rebalance basket). Client can reuse the template with one click, modify quantities, and place all orders simultaneously.',prev:'No basket template functionality – one-time use only',newCfg:'Save basket as named template. Load, edit qty, execute in single click. Store up to 10 templates per client.'},
-  {id:'CR-103',title:'GTT Order – Price Alert Based Execution',priority:'High',stage:'UAT',requester:'Product Team',planned:'Mar 22, 2026',uat:'No',uatBy:'',notes:'',desc:'GTT orders should trigger automatically when LTP hits the configured price. Support single-leg GTT and OCO GTT. GTT should persist across sessions and survive broker system restarts.',prev:'GTT partially available – does not survive system restart',newCfg:'Persistent GTT with single-leg and OCO. Trigger on LTP hit. Survive restarts via DB persistence.'},
-  {id:'CR-104',title:'Client-wise Brokerage Report – Slab Breakup View',priority:'Medium',stage:'QA / Testing',requester:'Accounts',planned:'Mar 28, 2026',uat:'No',uatBy:'',notes:'',desc:'Generate client-wise brokerage report showing actual slab applied, turnover per segment (EQ/FO/CDS), brokerage charged, GST, STT, exchange charges separately.',prev:'Consolidated brokerage report available – no slab breakup',newCfg:'Segment-wise breakup: turnover, slab applied, brokerage, GST, STT, exchange charges. Excel export.'},
-  {id:'CR-105',title:'Daily MTM P&L Report – Client & Dealer View',priority:'High',stage:'Go Live',requester:'Operations',planned:'Mar 10, 2026',uat:'Yes',uatBy:'Ops Head',notes:'',desc:'Real-time MTM P&L report at client level and dealer level. Show segment-wise unrealised and realised P&L. Auto-refresh every 30 seconds during market hours.',prev:'EOD P&L only – no intraday MTM report',newCfg:'Live MTM P&L with 30-sec refresh. Client + dealer view. Segment-wise realised/unrealised breakup.'},
-  {id:'CR-106',title:'Holding Statement – ISIN-wise Consolidated View (NSE+BSE)',priority:'Low',stage:'Development',requester:'Operations',planned:'May 5, 2026',uat:'No',uatBy:'',notes:'',desc:'Consolidated holding statement showing client holdings across NSE and BSE for the same ISIN in a single row.',prev:'Separate rows for NSE and BSE holdings of same ISIN',newCfg:'ISIN-level consolidation across exchanges. Show LTP, current value, cost, unrealised P&L per ISIN.'},
-  {id:'CR-107',title:'SEBI Peak Margin Reporting – Automated EOD File Generation',priority:'High',stage:'QA / Testing',requester:'Compliance',planned:'Apr 2, 2026',uat:'No',uatBy:'',notes:'',desc:'Auto-generate SEBI-prescribed peak margin reporting file at EOD. Capture 4 intraday snapshots and compute peak margin obligation per client per segment.',prev:'Manual compilation of peak margin data – error prone',newCfg:'Auto 4-snapshot capture during market hours. EOD file generation in exchange-prescribed format by 8:45 PM.'},
-  {id:'CR-108',title:'DDPI Validation – Block Physical POA Client from Delivery Sell',priority:'High',stage:'Vendor Data Submission',requester:'Compliance',planned:'Apr 15, 2026',uat:'No',uatBy:'',notes:'',desc:'Block delivery sell orders for clients with expired/invalid POA as per SEBI DDPI guidelines.',prev:'No POA status check at order placement',newCfg:'Check DDPI/POA status at order placement. Block delivery sell if POA invalid.'},
-  {id:'CR-109',title:'Digital Account Opening – Video IPV Integration',priority:'Medium',stage:'On Hold',requester:'Onboarding Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Integrate video-based IPV in the digital account opening flow. Currently on hold pending vendor finalisation.',prev:'Physical IPV at branch or home visit required',newCfg:'In-app video IPV. Auto face-match with Aadhaar photo. Recording stored with audit trail.'},
-  {id:'CR-110',title:'Client Risk Profiling – Auto Segment Activation Based on Score',priority:'Medium',stage:'Requirement Gathering',requester:'Onboarding Team',planned:'May 12, 2026',uat:'No',uatBy:'',notes:'',desc:'Capture risk profile questionnaire during account opening. Auto-activate segments based on score.',prev:'Manual segment activation by ops team after account opening',newCfg:'Risk score to auto segment activation matrix. Admin override with reason logging.'},
-  {id:'CR-111',title:'Payout Processing – Auto UPI Payout for Sub-Broker Clients',priority:'High',stage:'Development',requester:'Back Office',planned:'Apr 8, 2026',uat:'No',uatBy:'',notes:'',desc:'Automate fund payout to clients via UPI for amounts below Rs 1 lakh. UPI payouts trigger automatically after T+1 settlement, with fallback to NEFT if UPI fails.',prev:'All payouts via NEFT/RTGS – manual initiation by back office',newCfg:'Auto UPI payout post T+1 for amounts below Rs 1L. NEFT fallback on UPI failure.'},
-  {id:'CR-112',title:'Sub-Broker Commission Calculation – Slab-wise Auto Compute',priority:'Medium',stage:'Requirement Gathering',requester:'Back Office',planned:'May 20, 2026',uat:'No',uatBy:'',notes:'',desc:'Auto-calculate sub-broker commission based on configured slab. Generate sub-broker payout report monthly.',prev:'Manual Excel-based sub-broker commission computation',newCfg:'Slab config per sub-broker. Auto compute from trade data. Monthly payout report with GST TDS deduction.'},
+const DEFAULT_PROJECTS = [
+  {
+    id:'rms',name:'RMS Development',
+    desc:'Risk Management System — margin, MTF, collateral, SQ off and related CRs.',
+    icon:'🔍',color:'#4f8ef7',
+    file:'cr-tracker-rms.html'
+  },
+  {
+    id:'middleware',name:'Middleware',
+    desc:'Middleware layer CRs — API integrations, data flow, and vendor connectivity.',
+    icon:'🔗',color:'#a78bfa',
+    file:'cr-tracker-middleware.html'
+  },
+  {
+    id:'backoffice',name:'Back Office',
+    desc:'Payout processing, sub-broker commissions, reconciliation and back office ops.',
+    icon:'💼',color:'#fbbf24',
+    file:'cr-tracker-backoffice.html'
+  },
+  {
+    id:'compliance',name:'Compliance',
+    desc:'SEBI guidelines, DDPI, peak margin reporting and regulatory CRs.',
+    icon:'🛡️',color:'#34d399',
+    file:'cr-tracker-compliance.html'
+  },
 ];
 
-let CRS = [];
-let selId = null;
-let activeStageFilter = null;
+// CR storage keys per project — we read from each project's localStorage key
+const PROJECT_CR_KEYS = {
+  'rms':        'vatsal_cr_v4',        // existing RMS CRs
+  'middleware':  'narendra_cr_middleware_v1',
+  'backoffice':  'narendra_cr_backoffice_v1',
+  'compliance':  'narendra_cr_compliance_v1',
+};
 
-function saveToStorage(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(CRS)); }catch(e){}
-}
-function loadFromStorage(){
+let PROJECTS = [];
+
+function loadProjects(){
   try{
-    // Clear all old keys
-    ['vatsal_cr_tracker_v1','vatsal_cr_tracker_v2','vatsal_cr_tracker_v3'].forEach(k=>{
-      try{localStorage.removeItem(k);}catch(e){}
-    });
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){
-      const parsed = JSON.parse(raw);
-      if(Array.isArray(parsed) && parsed.length > 0){ CRS = parsed; return true; }
-    }
+    const raw = localStorage.getItem(PROJ_KEY);
+    if(raw){ const p=JSON.parse(raw); if(Array.isArray(p)&&p.length>0){PROJECTS=p;return;} }
   }catch(e){}
-  return false;
+  PROJECTS = JSON.parse(JSON.stringify(DEFAULT_PROJECTS));
+  saveProjects();
+}
+function saveProjects(){ try{localStorage.setItem(PROJ_KEY,JSON.stringify(PROJECTS));}catch(e){} }
+
+function getCRsForProject(proj){
+  try{
+    const key = PROJECT_CR_KEYS[proj.id] || ('narendra_cr_'+proj.id+'_v1');
+    const raw = localStorage.getItem(key);
+    if(raw){ const p=JSON.parse(raw); if(Array.isArray(p)) return p; }
+  }catch(e){}
+  return [];
 }
 
-function pct(stage){ if(stage==='On Hold') return 0; return Math.round(((STAGE_IDX[stage]??0)+1)/STAGES.length*100); }
-function priCls(p){ return p==='High'?'b-high':p==='Medium'?'b-med':'b-low'; }
-function stageCls(s){ if(s==='On Hold') return 'b-hold'; return STAGE_CLS[STAGE_IDX[s]??0]||'b-req'; }
-function isOverdue(cr){ if(!cr.planned||cr.stage==='Go Live') return false; const d=new Date(cr.planned); return !isNaN(d)&&d<new Date(); }
+function avgProgress(crs){
+  if(!crs.length) return 0;
+  const STAGES=['Requirement Gathering','Vendor Data Submission','Development','QA / Testing','UAT','Go Live'];
+  const pcts = crs.map(c=>{
+    if(c.stage==='On Hold') return 0;
+    const idx = STAGES.indexOf(c.stage);
+    return Math.round(((idx>=0?idx:0)+1)/STAGES.length*100);
+  });
+  return Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length);
+}
+
+function barColor(pct){
+  if(pct>=80) return '#34d399';
+  if(pct>=40) return '#4f8ef7';
+  return '#fbbf24';
+}
+
+function renderProjects(){
+  const grid = document.getElementById('projects-grid');
+  let totalCRs=0, inProgress=0, goLive=0;
+
+  const cards = PROJECTS.map(proj=>{
+    const crs = getCRsForProject(proj);
+    const total = crs.length;
+    const done = crs.filter(c=>c.stage==='Go Live').length;
+    const active = crs.filter(c=>c.stage!=='Go Live'&&c.stage!=='On Hold').length;
+    const onHold = crs.filter(c=>c.stage==='On Hold').length;
+    const pct = avgProgress(crs);
+    const fill = barColor(pct);
+    totalCRs+=total; inProgress+=active; goLive+=done;
+
+    const stageBreakdown = total>0
+      ? `<span class="proj-tag">✅ ${done} Go Live</span><span class="proj-tag">🔄 ${active} Active</span>${onHold?`<span class="proj-tag">⏸ ${onHold} On Hold</span>`:''}`
+      : `<span class="proj-tag">No CRs yet — click to add</span>`;
+
+    return `<div class="proj-card" onclick="openProject('${proj.id}')">
+      <div class="proj-top">
+        <div class="proj-icon" style="background:${proj.color}22;">${proj.icon}</div>
+        <div class="proj-arrow">→</div>
+      </div>
+      <div class="proj-name">${proj.name}</div>
+      <div class="proj-desc">${proj.desc}</div>
+      <div class="proj-bar-wrap">
+        <div class="proj-bar-top">
+          <div class="proj-bar-lbl">Overall Progress · ${total} CR${total!==1?'s':''}</div>
+          <div class="proj-bar-pct" style="color:${fill};">${pct}%</div>
+        </div>
+        <div class="proj-bar-bg"><div class="proj-bar-fill" style="width:${pct}%;background:${fill};"></div></div>
+      </div>
+      <div class="proj-tags">${stageBreakdown}</div>
+    </div>`;
+  }).join('');
+
+  grid.innerHTML = cards + `<div class="proj-card-add" onclick="openModal()">
+    <div class="add-icon">＋</div>
+    <div class="add-txt">Add New Project</div>
+  </div>`;
+
+  // Update summary
+  document.getElementById('s-projects').textContent = PROJECTS.length;
+  document.getElementById('s-crs').textContent = totalCRs;
+  document.getElementById('s-inprogress').textContent = inProgress;
+  document.getElementById('s-done').textContent = goLive;
+}
+
+function openProject(id){
+  const proj = PROJECTS.find(p=>p.id===id);
+  if(!proj) return;
+  // Store which project is selected so the CR tracker knows
+  localStorage.setItem('narendra_active_project', JSON.stringify({id:proj.id, name:proj.name, icon:proj.icon, color:proj.color}));
+  window.location.href = 'index2.html?project='+proj.id;
+}
+
+function openModal(){ document.getElementById('modal').classList.add('open'); }
+function closeModal(){ document.getElementById('modal').classList.remove('open'); }
+
+function saveProject(){
+  const name = document.getElementById('m-name').value.trim();
+  if(!name){ toast('Project name is required'); return; }
+  const id = name.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+Date.now();
+  PROJECTS.push({
+    id, name,
+    desc: document.getElementById('m-desc').value||'No description added.',
+    icon: document.getElementById('m-icon').value,
+    color: document.getElementById('m-color').value,
+    file: 'cr-tracker-'+id+'.html'
+  });
+  saveProjects();
+  closeModal();
+  renderProjects();
+  toast('✓ Project added');
+}
+
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
 
-function renderStagePills(){
-  const el=document.getElementById('stage-row');
-  const pills=STAGES.map((s,i)=>{
-    const cnt=CRS.filter(c=>c.stage===s).length;
-    const active=activeStageFilter===s?'active':'';
-    return `<div class="spill ${SPILL_CLS[i]} ${active}" onclick="toggleStageFilter('${s}')"><div class="sn">${cnt}</div><div class="sl">${STAGE_SH[i]}</div></div>`;
-  });
-  const holdCnt=CRS.filter(c=>c.stage==='On Hold').length;
-  const holdActive=activeStageFilter==='On Hold'?'active':'';
-  pills.push(`<div class="spill sp-hold ${holdActive}" onclick="toggleStageFilter('On Hold')"><div class="sn">${holdCnt}</div><div class="sl">On Hold</div></div>`);
-  el.innerHTML=pills.join('');
-}
-function toggleStageFilter(s){
-  activeStageFilter=activeStageFilter===s?null:s;
-  document.getElementById('f-stage').value=activeStageFilter||'';
-  renderStagePills(); renderTable();
-}
-
-function renderTable(){
-  const q=document.getElementById('search').value.toLowerCase();
-  const fp=document.getElementById('f-priority').value;
-  const fs=document.getElementById('f-stage').value;
-  const fu=document.getElementById('f-uat').value;
-  const rows=CRS.filter(c=>{
-    if(q&&!c.id.toLowerCase().includes(q)&&!c.title.toLowerCase().includes(q)) return false;
-    if(fp&&c.priority!==fp) return false;
-    if(fs&&c.stage!==fs) return false;
-    if(fu&&c.uat!==fu) return false;
-    return true;
-  });
-  document.getElementById('result-count').textContent=`${rows.length} CR${rows.length!==1?'s':''}`;
-  const tb=document.getElementById('cr-tbody');
-  tb.innerHTML=rows.map(c=>{
-    const p=pct(c.stage);
-    const fill=p===100?'#059669':'#2563eb';
-    const od=isOverdue(c);
-    const docBadge=c.docs&&c.docs.length?` <span style="font-size:10px;background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:10px;font-weight:600;margin-left:4px;">📎 ${c.docs.length}</span>`:'';
-    return `<tr onclick="openDetail('${c.id}')" class="${selId===c.id?'sel':''}">
-      <td><span class="cr-id">${c.id}</span></td>
-      <td><span class="cr-title">${c.title}</span>${docBadge}</td>
-      <td style="font-size:11px;color:var(--muted);">${c.requester}</td>
-      <td><span class="badge ${priCls(c.priority)}">${c.priority}</span></td>
-      <td><span class="badge ${stageCls(c.stage)}">${c.stage}</span></td>
-      <td style="font-size:11px;" class="${od?'overdue-flag':''}">${c.planned||'—'}${od?' ⚠':''}</td>
-      <td><span class="badge ${c.uat==='Yes'?'b-done':'b-todo'}">${c.uat==='Yes'?'Done':'Pending'}</span></td>
-      <td><div class="prog-cell"><div class="prog-bg"><div class="prog-bar" style="width:${p}%;background:${fill};"></div></div><span class="prog-pct">${p}%</span></div></td>
-    </tr>`;
-  }).join('')||`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px;">No CRs match the current filters</td></tr>`;
-}
-
-function renderNotesDisplay(c){
-  const el=document.getElementById('dp-notes-display'); if(!el) return;
-  const log=Array.isArray(c.notesLog)?c.notesLog:(c.notes?[{text:c.notes,ts:'Previously saved'}]:[]);
-  if(!log.length){ el.innerHTML=`<div class="notes-empty">No notes yet — add one below and click Save changes.</div>`; return; }
-  el.innerHTML=[...log].reverse().map(n=>`<div class="note-entry"><div class="note-text">${n.text.replace(/</g,'&lt;')}</div><div class="note-meta">🕐 ${n.ts}</div></div>`).join('');
-}
-
-function renderDocsDisplay(c){
-  const el=document.getElementById('dp-docs-display'); if(!el) return;
-  const docs=Array.isArray(c.docs)?c.docs:[];
-  if(!docs.length){ el.innerHTML=`<div class="docs-empty">No documents attached yet — click "Attach document" to upload one.</div>`; return; }
-  el.innerHTML=docs.map((d,i)=>`
-    <div class="doc-item">
-      <div class="doc-icon">${getDocIcon(d.name)}</div>
-      <div class="doc-info"><div class="doc-name" title="${d.name}">${d.name}</div><div class="doc-meta">${fmtSize(d.size)} &nbsp;·&nbsp; Added ${d.ts}</div></div>
-      <div class="doc-actions">
-        <button class="doc-btn" onclick="downloadDoc('${c.id}',${i})">⬇ Download</button>
-        <button class="doc-btn doc-btn-del" onclick="deleteDoc('${c.id}',${i})">✕ Remove</button>
-      </div>
-    </div>`).join('');
-}
-
-function getDocIcon(name){ const ext=(name.split('.').pop()||'').toLowerCase(); if(ext==='pdf') return '📄'; if(['doc','docx'].includes(ext)) return '📝'; if(['xls','xlsx'].includes(ext)) return '📊'; if(['ppt','pptx'].includes(ext)) return '📑'; return '📎'; }
-function fmtSize(bytes){ if(bytes<1024) return bytes+'B'; if(bytes<1024*1024) return (bytes/1024).toFixed(1)+'KB'; return (bytes/1024/1024).toFixed(1)+'MB'; }
-
-function openDetail(id){
-  selId=id;
-  const c=CRS.find(x=>x.id===id); if(!c) return;
-  renderTable();
-  document.getElementById('dp-title').textContent=c.title;
-  document.getElementById('dp-id').textContent=`${c.id}  ·  Vendor: Kambala  ·  Requester: ${c.requester}`;
-  document.getElementById('dp-desc').textContent=c.desc||'No description added.';
-  document.getElementById('dp-prev').textContent=c.prev||'—';
-  document.getElementById('dp-new').textContent=c.newCfg||'—';
-  document.getElementById('dp-meta').innerHTML=[
-    ['Priority',`<span class="badge ${priCls(c.priority)}">${c.priority}</span>`],
-    ['Stage',`<span class="badge ${stageCls(c.stage)}">${c.stage}</span>`],
-    ['Progress',`${pct(c.stage)}% complete`],
-    ['Delivery',c.planned||'Not set'],
-    ['UAT status',`<span class="badge ${c.uat==='Yes'?'b-done':'b-todo'}">${c.uat==='Yes'?'Signed off':'Pending'}</span>`],
-    ['UAT by',c.uatBy||'—'],
-  ].map(([l,v])=>`<div class="dp-field"><div class="lbl">${l}</div><div class="val">${v}</div></div>`).join('');
-  // Pipeline
-  if(c.stage==='On Hold'){
-    document.getElementById('dp-pipeline').innerHTML=`<div style="padding:10px 14px;background:#f1f5f9;border-radius:8px;font-size:13px;color:#475569;font-weight:600;border-left:3px solid #94a3b8;">⏸ This CR is currently On Hold — add a note below with the reason and expected next phase.</div>`;
-  } else {
-    const ci=STAGE_IDX[c.stage]??0;
-    let pipe='';
-    STAGES.forEach((s,i)=>{
-      if(i>0) pipe+=`<div class="pipe-line ${i<=ci?'done':'pending'}"></div>`;
-      const cls=i<ci?'done':i===ci?'current':'pending';
-      pipe+=`<div class="pipe-step"><div class="pipe-dot ${cls}">${i<ci?'✓':i+1}</div><div class="pipe-lbl">${STAGE_SH[i]}</div></div>`;
-    });
-    document.getElementById('dp-pipeline').innerHTML=pipe;
-  }
-  // Timeline
-  const p=pct(c.stage);
-  document.getElementById('dp-timeline').innerHTML=`
-    <div class="tl-row"><div class="tl-lbl">Planned</div><div class="tl-bar-bg"><div class="tl-bar" style="width:100%;background:#bfdbfe;"></div></div><div class="tl-date">${c.planned||'Not set'}</div></div>
-    <div class="tl-row"><div class="tl-lbl">Actual</div><div class="tl-bar-bg"><div class="tl-bar" style="width:${p}%;background:${p===100?'#059669':'#2563eb'};"></div></div><div class="tl-date">${p===100?'Complete':p+'% done'}</div></div>`;
-  // UAT
-  const uatItems=[
-    {label:'Business sign-off',done:c.uat==='Yes',by:c.uatBy||'Pending'},
-    {label:'Tech sign-off',done:c.uat==='Yes',by:c.uat==='Yes'?'Dev Lead':'Pending'},
-    {label:'Compliance',done:c.uat==='Yes',by:c.uat==='Yes'?'Compliance Team':'Pending'},
-  ];
-  document.getElementById('dp-uat').innerHTML=uatItems.map(u=>`<div class="uat-row"><div class="uat-check ${u.done?'uat-yes':'uat-no'}">${u.done?'✓':''}</div><div class="uat-txt">${u.label}</div><div class="uat-by">${u.by}</div></div>`).join('');
-  // Edit fields
-  document.getElementById('e-stage').value=c.stage;
-  document.getElementById('e-priority').value=c.priority;
-  document.getElementById('e-delivery').value=c.planned||'';
-  document.getElementById('e-uat').value=c.uat;
-  document.getElementById('e-notes').value='';
-  renderNotesDisplay(c);
-  renderDocsDisplay(c);
-  const panel=document.getElementById('detail-panel');
-  panel.classList.add('open');
-  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-
-function closeDetail(){ selId=null; document.getElementById('detail-panel').classList.remove('open'); renderTable(); }
-
-function saveCREdit(){
-  const c=CRS.find(x=>x.id===selId); if(!c) return;
-  c.stage=document.getElementById('e-stage').value;
-  c.priority=document.getElementById('e-priority').value;
-  c.planned=document.getElementById('e-delivery').value;
-  c.uat=document.getElementById('e-uat').value;
-  const newNote=document.getElementById('e-notes').value.trim();
-  if(newNote){
-    if(!Array.isArray(c.notesLog)) c.notesLog=[];
-    const last=c.notesLog[c.notesLog.length-1];
-    if(!last||last.text!==newNote){
-      const now=new Date();
-      c.notesLog.push({text:newNote,ts:now.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})});
-    }
-    c.notes=newNote;
-  }
-  saveToStorage();
-  renderStagePills();
-  renderTable();
-  renderNotesDisplay(c);
-  document.getElementById('dp-meta').innerHTML=[
-    ['Priority',`<span class="badge ${priCls(c.priority)}">${c.priority}</span>`],
-    ['Stage',`<span class="badge ${stageCls(c.stage)}">${c.stage}</span>`],
-    ['Progress',`${pct(c.stage)}% complete`],
-    ['Delivery',c.planned||'Not set'],
-    ['UAT status',`<span class="badge ${c.uat==='Yes'?'b-done':'b-todo'}">${c.uat==='Yes'?'Signed off':'Pending'}</span>`],
-    ['UAT by',c.uatBy||'—'],
-  ].map(([l,v])=>`<div class="dp-field"><div class="lbl">${l}</div><div class="val">${v}</div></div>`).join('');
-  if(c.stage==='On Hold'){
-    document.getElementById('dp-pipeline').innerHTML=`<div style="padding:10px 14px;background:#f1f5f9;border-radius:8px;font-size:13px;color:#475569;font-weight:600;border-left:3px solid #94a3b8;">⏸ This CR is currently On Hold — add a note below with the reason and expected next phase.</div>`;
-  } else {
-    const ci=STAGE_IDX[c.stage]??0;
-    let pipe='';
-    STAGES.forEach((s,i)=>{
-      if(i>0) pipe+=`<div class="pipe-line ${i<=ci?'done':'pending'}"></div>`;
-      const cls=i<ci?'done':i===ci?'current':'pending';
-      pipe+=`<div class="pipe-step"><div class="pipe-dot ${cls}">${i<ci?'✓':i+1}</div><div class="pipe-lbl">${STAGE_SH[i]}</div></div>`;
-    });
-    document.getElementById('dp-pipeline').innerHTML=pipe;
-  }
-  document.getElementById('e-notes').value='';
-  toast('✓ CR updated and saved');
-}
-
-function deleteCR(){
-  const c=CRS.find(x=>x.id===selId); if(!c) return;
-  if(!confirm(`Delete "${c.id} — ${c.title}"?\n\nThis cannot be undone.`)) return;
-  CRS=CRS.filter(x=>x.id!==selId);
-  selId=null;
-  saveToStorage();
-  document.getElementById('detail-panel').classList.remove('open');
-  renderStagePills(); renderTable();
-  toast('🗑 CR deleted');
-}
-
-function attachDocument(e){
-  const file=e.target.files[0]; if(!file) return;
-  const c=CRS.find(x=>x.id===selId); if(!c) return;
-  if(file.size>5*1024*1024){ toast('⚠ File too large (max 5MB)'); e.target.value=''; return; }
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    if(!Array.isArray(c.docs)) c.docs=[];
-    const now=new Date();
-    c.docs.push({name:file.name,size:file.size,type:file.type,data:ev.target.result,ts:now.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})});
-    try{ saveToStorage(); renderDocsDisplay(c); toast(`✓ "${file.name}" attached`); }
-    catch(err){ c.docs.pop(); toast('⚠ Storage full — export a backup first then retry'); }
-  };
-  reader.readAsDataURL(file);
-  e.target.value='';
-}
-function downloadDoc(crId,idx){ const c=CRS.find(x=>x.id===crId); if(!c||!c.docs||!c.docs[idx]) return; const a=document.createElement('a'); a.href=c.docs[idx].data; a.download=c.docs[idx].name; a.click(); }
-function deleteDoc(crId,idx){ const c=CRS.find(x=>x.id===crId); if(!c||!c.docs||!c.docs[idx]) return; if(!confirm(`Remove "${c.docs[idx].name}" from this CR?`)) return; c.docs.splice(idx,1); saveToStorage(); renderDocsDisplay(c); toast('🗑 Document removed'); }
-
-function toggleAddForm(){ document.getElementById('add-form').classList.toggle('open'); }
-function saveCR(){
-  const id=document.getElementById('nc-id').value.trim();
-  const title=document.getElementById('nc-title').value.trim();
-  if(!id||!title){ toast('CR ID and Title are required'); return; }
-  if(CRS.find(c=>c.id===id)){ toast('CR ID already exists'); return; }
-  CRS.unshift({
-    id,title,
-    priority:document.getElementById('nc-pri').value,
-    stage:document.getElementById('nc-stage').value,
-    requester:document.getElementById('nc-requester').value||'—',
-    planned:document.getElementById('nc-delivery').value||'',
-    uat:'No',uatBy:'',notes:'',
-    desc:document.getElementById('nc-desc').value||'—',
-    prev:'—',newCfg:'—'
-  });
-  ['nc-id','nc-title','nc-requester','nc-delivery','nc-desc'].forEach(i=>document.getElementById(i).value='');
-  document.getElementById('add-form').classList.remove('open');
-  saveToStorage(); renderStagePills(); renderTable();
-  toast('✓ New CR added');
-}
-
-function exportCSV(){
-  const esc=v=>{ const s=String(v==null?'':v).replace(/"/g,'""'); return (s.includes(',')||s.includes('\n')||s.includes('"'))?`"${s}"`:s; };
-  const headers=['CR ID','Title','Description','Requester','Priority','Stage','Progress (%)','Expected Delivery','UAT Sign-off','UAT By','Previous Config','New Config / Logic','Notes'];
-  const rows=CRS.map(c=>[c.id,c.title,c.desc,c.requester,c.priority,c.stage,pct(c.stage),c.planned||'',c.uat,c.uatBy||'',c.prev||'',c.newCfg||'',Array.isArray(c.notesLog)?c.notesLog.map(n=>`[${n.ts}] ${n.text}`).join(' | '):(c.notes||'')]);
-  const csv=[headers,...rows].map(r=>r.map(esc).join(',')).join('\n');
-  const sumRows=[['Total CRs',CRS.length],['High Priority',CRS.filter(c=>c.priority==='High').length],['Medium Priority',CRS.filter(c=>c.priority==='Medium').length],['Low Priority',CRS.filter(c=>c.priority==='Low').length],['',''],...STAGES.map(s=>[`Stage: ${s}`,CRS.filter(c=>c.stage===s).length]),['Stage: On Hold',CRS.filter(c=>c.stage==='On Hold').length],['',''],['UAT Signed Off',CRS.filter(c=>c.uat==='Yes').length],['UAT Pending',CRS.filter(c=>c.uat==='No').length]];
-  const csv2='\n\n--- SUMMARY ---\n'+[['Metric','Count'],...sumRows].map(r=>r.map(esc).join(',')).join('\n');
-  const blob=new Blob(['\uFEFF'+csv+csv2],{type:'text/csv;charset=utf-8;'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`CR_Tracker_${new Date().toISOString().slice(0,10)}.csv`; a.click();
-  toast('✓ Exported as CSV — open in Excel');
-}
-function exportJSON(){ const blob=new Blob([JSON.stringify(CRS,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`CR_Backup_${new Date().toISOString().slice(0,10)}.json`; a.click(); toast('✓ Backup saved'); }
-function importJSON(){ document.getElementById('file-import').click(); }
-function handleImport(e){
-  const file=e.target.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=ev=>{ try{ const data=JSON.parse(ev.target.result); if(!Array.isArray(data)) throw new Error(); CRS=data; saveToStorage(); renderStagePills(); renderTable(); toast(`✓ Imported ${CRS.length} CRs`); }catch(err){ toast('⚠ Invalid backup file'); } };
-  reader.readAsText(file); e.target.value='';
-}
-
 // Init
-const loaded=loadFromStorage();
-if(!loaded){ CRS=JSON.parse(JSON.stringify(DEFAULT_CRS)); saveToStorage(); }
-document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-renderStagePills();
-renderTable();
+loadProjects();
+document.getElementById('top-date').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short',year:'numeric'});
+renderProjects();
 </script>
 </body>
 </html>
