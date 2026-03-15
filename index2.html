@@ -581,7 +581,7 @@ async function attachDocument(e){
   const c=CRS.find(x=>x.id===selId); if(!c) return;
   if(file.size>5*1024*1024){ toast('⚠ File too large (max 5MB)'); e.target.value=''; return; }
   const reader=new FileReader();
-  reader.onload=ev=>{
+  reader.onload=async ev=>{
     if(!Array.isArray(c.docs)) c.docs=[];
     const now=new Date();
     c.docs.push({name:file.name,size:file.size,type:file.type,data:ev.target.result,ts:now.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})});
@@ -632,7 +632,7 @@ function importJSON(){ document.getElementById('file-import').click(); }
 function handleImport(e){
   const file=e.target.files[0]; if(!file) return;
   const reader=new FileReader();
-  reader.onload=ev=>{ try{ const data=JSON.parse(ev.target.result); if(!Array.isArray(data)) throw new Error(); CRS=data; await saveToStorage(); renderStagePills(); renderTable(); toast(`✓ Imported ${CRS.length} CRs`); }catch(err){ toast('⚠ Invalid backup file'); } };
+  reader.onload=async ev=>{ try{ const data=JSON.parse(ev.target.result); if(!Array.isArray(data)) throw new Error(); CRS=data; await saveToStorage(); renderStagePills(); renderTable(); toast(`✓ Imported ${CRS.length} CRs`); }catch(err){ toast('⚠ Invalid backup file'); } };
   reader.readAsText(file); e.target.value='';
 }
 
