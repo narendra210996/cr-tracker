@@ -537,7 +537,7 @@ async function saveCREdit(){
     }
     c.notes=newNote;
   }
-  saveToStorage();
+  await saveToStorage();
   renderStagePills();
   renderTable();
   renderNotesDisplay(c);
@@ -570,7 +570,7 @@ async function deleteCR(){
   if(!confirm(`Delete "${c.id} — ${c.title}"?\n\nThis cannot be undone.`)) return;
   CRS=CRS.filter(x=>x.id!==selId);
   selId=null;
-  saveToStorage();
+  await saveToStorage();
   document.getElementById('detail-panel').classList.remove('open');
   renderStagePills(); renderTable();
   toast('🗑 CR deleted');
@@ -585,14 +585,14 @@ async function attachDocument(e){
     if(!Array.isArray(c.docs)) c.docs=[];
     const now=new Date();
     c.docs.push({name:file.name,size:file.size,type:file.type,data:ev.target.result,ts:now.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})});
-    try{ saveToStorage(); renderDocsDisplay(c); toast(`✓ "${file.name}" attached`); }
+    try{ await saveToStorage(); renderDocsDisplay(c); toast(`✓ "${file.name}" attached`); }
     catch(err){ c.docs.pop(); toast('⚠ Storage full — export a backup first then retry'); }
   };
   reader.readAsDataURL(file);
   e.target.value='';
 }
 function downloadDoc(crId,idx){ const c=CRS.find(x=>x.id===crId); if(!c||!c.docs||!c.docs[idx]) return; const a=document.createElement('a'); a.href=c.docs[idx].data; a.download=c.docs[idx].name; a.click(); }
-async function deleteDoc(crId,idx){ const c=CRS.find(x=>x.id===crId); if(!c||!c.docs||!c.docs[idx]) return; if(!confirm(`Remove "${c.docs[idx].name}" from this CR?`)) return; c.docs.splice(idx,1); saveToStorage(); renderDocsDisplay(c); toast('🗑 Document removed'); }
+async function deleteDoc(crId,idx){ const c=CRS.find(x=>x.id===crId); if(!c||!c.docs||!c.docs[idx]) return; if(!confirm(`Remove "${c.docs[idx].name}" from this CR?`)) return; c.docs.splice(idx,1); await saveToStorage(); renderDocsDisplay(c); toast('🗑 Document removed'); }
 
 function toggleAddForm(){ document.getElementById('add-form').classList.toggle('open'); }
 async function saveCR(){
@@ -612,7 +612,7 @@ async function saveCR(){
   });
   ['nc-id','nc-title','nc-requester','nc-delivery','nc-desc'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('add-form').classList.remove('open');
-  saveToStorage(); renderStagePills(); renderTable();
+  await saveToStorage(); renderStagePills(); renderTable();
   toast('✓ New CR added');
 }
 
@@ -632,7 +632,7 @@ function importJSON(){ document.getElementById('file-import').click(); }
 function handleImport(e){
   const file=e.target.files[0]; if(!file) return;
   const reader=new FileReader();
-  reader.onload=ev=>{ try{ const data=JSON.parse(ev.target.result); if(!Array.isArray(data)) throw new Error(); CRS=data; saveToStorage(); renderStagePills(); renderTable(); toast(`✓ Imported ${CRS.length} CRs`); }catch(err){ toast('⚠ Invalid backup file'); } };
+  reader.onload=ev=>{ try{ const data=JSON.parse(ev.target.result); if(!Array.isArray(data)) throw new Error(); CRS=data; await saveToStorage(); renderStagePills(); renderTable(); toast(`✓ Imported ${CRS.length} CRs`); }catch(err){ toast('⚠ Invalid backup file'); } };
   reader.readAsText(file); e.target.value='';
 }
 

@@ -244,7 +244,11 @@ function loadProjects(){
   PROJECTS = JSON.parse(JSON.stringify(DEFAULT_PROJECTS));
   saveProjects();
 }
-function saveProjects(){ try{localStorage.setItem(PROJ_KEY,JSON.stringify(PROJECTS));}catch(e){} }
+function saveProjects(){
+  try{localStorage.setItem(PROJ_KEY,JSON.stringify(PROJECTS));}catch(e){}
+  // Also save to Supabase
+  sbUpsert('project_crs',{project_id:'__projects__',crs:PROJECTS,updated_at:new Date().toISOString()});
+}
 
 function getCRsForProject(proj){
   try{
@@ -492,7 +496,17 @@ const DEFAULT_PROJECTS=[
   {id:'compliance',name:'Compliance',desc:'SEBI guidelines, DDPI, peak margin reporting and regulatory CRs.',icon:'🛡️',color:'#16a34a'},
 ];
 let PROJECTS=[];
-function loadProjects(){
+async function loadProjects(){
+  // Try Supabase first
+  try{
+    const rows=await sbGet('project_crs','project_id=eq.__projects__&select=crs');
+    if(rows&&rows.length>0&&rows[0].crs&&rows[0].crs.length>0){
+      PROJECTS=rows[0].crs;
+      localStorage.setItem(PROJ_KEY,JSON.stringify(PROJECTS));
+      return;
+    }
+  }catch(e){}
+  // Fallback localStorage
   try{ const r=localStorage.getItem(PROJ_KEY); if(r){const p=JSON.parse(r);if(Array.isArray(p)&&p.length>0){PROJECTS=p;return;}} }catch(e){}
   PROJECTS=JSON.parse(JSON.stringify(DEFAULT_PROJECTS)); saveProjects();
 }
@@ -627,6 +641,7 @@ async function adminResetPassword(username){
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
+(async function(){
 const session=getSession();
 if(!session||!session.username){ window.location.href='login.html'; }
 else{
@@ -635,10 +650,11 @@ else{
   if(session.role==='admin'){ rb.textContent='Admin'; rb.style.background='#eff6ff'; rb.style.color='var(--accent)'; document.getElementById('admin-btn').style.display='block'; }
   else if(session.role==='editor'){ rb.textContent='Editor'; rb.style.background='#f0fdf4'; rb.style.color='var(--green)'; }
   else{ rb.textContent='Viewer'; rb.style.background='#f8fafc'; rb.style.color='var(--muted)'; }
-  loadProjects();
+  await loadProjects();
   document.getElementById('top-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short',year:'numeric'});
   renderProjects();
 }
+})();
 </script>
 </body>
 </html>
