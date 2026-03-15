@@ -160,7 +160,7 @@ tbody tr.sel{background:#eff6ff;}
 const SUPA_URL="https://ixbfzbxzqjwtxwvpwdvp.supabase.co";
 const SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4YmZ6Ynh6cWp3dHh3dnB3ZHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NTQ5MDEsImV4cCI6MjA4OTEzMDkwMX0.ZyNrWiSUjnw22aJkUxIyucd6TuRxFdrYVFw0Dmec3BE";
 async function sbGet(t,q){q=q||"";try{const r=await fetch(SUPA_URL+"/rest/v1/"+t+"?"+q,{headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY}});if(r.ok)return await r.json();}catch(e){}return null;}
-async function sbUpsert(t,d){try{const r=await fetch(SUPA_URL+"/rest/v1/"+t,{method:"POST",headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates"},body:JSON.stringify(d)});return r.ok;}catch(e){return false;}}
+async function sbUpsert(t,d){try{const r=await fetch(SUPA_URL+"/rest/v1/"+t,{method:"POST",headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates"},body:JSON.stringify(d)});if(!r.ok){const err=await r.text();console.error('sbUpsert error:',r.status,err);}return r.ok;}catch(e){console.error('sbUpsert exception:',e);return false;}}
 async function sbUpdate(t,d,f){try{const r=await fetch(SUPA_URL+"/rest/v1/"+t+"?"+f,{method:"PATCH",headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"application/json"},body:JSON.stringify(d)});return r.ok;}catch(e){return false;}}
 </script>
 </head>
@@ -353,15 +353,25 @@ let selId = null;
 let activeStageFilter = null;
 
 async function saveToStorage(){
-  try{ await sbUpsert('project_crs',{project_id:PROJECT_ID,crs:CRS,updated_at:new Date().toISOString()}); }catch(e){}
+  try{
+    const result = await sbUpsert('project_crs',{project_id:PROJECT_ID, crs:CRS, updated_at:new Date().toISOString()});
+    console.log('Supabase save result:', result, 'Project:', PROJECT_ID, 'CRs count:', CRS.length);
+  }catch(e){ console.error('Supabase save error:', e); }
   try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(CRS)); }catch(e){}
 }
 async function loadFromStorage(){
+  console.log('Loading from Supabase for project:', PROJECT_ID);
   try{
     const rows=await sbGet('project_crs','project_id=eq.'+PROJECT_ID+'&select=crs');
-    if(rows&&rows.length>0&&rows[0].crs&&rows[0].crs.length>0){ CRS=rows[0].crs; localStorage.setItem(STORAGE_KEY,JSON.stringify(CRS)); return true; }
-  }catch(e){}
-  try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw){const p=JSON.parse(raw);if(Array.isArray(p)&&p.length>0){CRS=p;return true;}} }catch(e){}
+    console.log('Supabase load result:', rows);
+    if(rows&&rows.length>0&&rows[0].crs&&rows[0].crs.length>0){
+      CRS=rows[0].crs;
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(CRS));
+      console.log('Loaded', CRS.length, 'CRs from Supabase');
+      return true;
+    }
+  }catch(e){ console.error('Supabase load error:', e); }
+  try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw){const p=JSON.parse(raw);if(Array.isArray(p)&&p.length>0){CRS=p;console.log('Loaded from localStorage:', CRS.length);return true;}} }catch(e){}
   return false;
 }
 
