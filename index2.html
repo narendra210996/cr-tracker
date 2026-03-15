@@ -156,6 +156,13 @@ tbody tr.sel{background:#eff6ff;}
 .toast{position:fixed;bottom:24px;right:24px;background:#1e2235;color:#fff;font-size:12px;font-weight:600;padding:10px 18px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;z-index:999;}
 .toast.show{opacity:1;transform:translateY(0);}
 </style>
+<script>
+const SUPA_URL="https://ixbfzbxzqjwtxwvpwdvp.supabase.co";
+const SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4YmZ6Ynh6cWp3dHh3dnB3ZHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NTQ5MDEsImV4cCI6MjA4OTEzMDkwMX0.ZyNrWiSUjnw22aJkUxIyucd6TuRxFdrYVFw0Dmec3BE";
+async function sbGet(t,q){q=q||"";try{const r=await fetch(SUPA_URL+"/rest/v1/"+t+"?"+q,{headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY}});if(r.ok)return await r.json();}catch(e){}return null;}
+async function sbUpsert(t,d){try{const r=await fetch(SUPA_URL+"/rest/v1/"+t,{method:"POST",headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates"},body:JSON.stringify(d)});return r.ok;}catch(e){return false;}}
+async function sbUpdate(t,d,f){try{const r=await fetch(SUPA_URL+"/rest/v1/"+t+"?"+f,{method:"PATCH",headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"application/json"},body:JSON.stringify(d)});return r.ok;}catch(e){return false;}}
+</script>
 </head>
 <body>
 <div class="toast" id="toast"></div>
@@ -299,15 +306,7 @@ const STAGE_SH  = ['Req','Vendor','Dev','QA','UAT','Go Live'];
 const STAGE_IDX = Object.fromEntries(STAGES.map((s,i)=>[s,i]));
 const STAGE_CLS = ['b-req','b-ven','b-dev','b-qa','b-uat','b-gl'];
 const SPILL_CLS = ['sp0','sp1','sp2','sp3','sp4','sp5'];
-// Dynamic storage key based on active project
-const PROJECT_CR_KEYS = {
-  'rms':        'vatsal_cr_v4',
-  'middleware':  'narendra_cr_middleware_v1',
-  'backoffice':  'narendra_cr_backoffice_v1',
-  'compliance':  'narendra_cr_compliance_v1',
-};
-const activeProject = (()=>{ try{ const p=JSON.parse(localStorage.getItem('narendra_active_project')||'{}'); return p; }catch(e){return {};} })();
-const STORAGE_KEY = PROJECT_CR_KEYS[activeProject.id] || 'vatsal_cr_v4';
+
 
 const DEFAULT_CRS = [
   {id:'CR-002',title:'Separate Validation – Long & Short Option',priority:'High',stage:'Requirement Gathering',requester:'Risk Team',planned:'',uat:'No',uatBy:'',notes:'',desc:'Separate validation for long & short option based on volume and open interest.',prev:'Not available',newCfg:'To be developed by Kambala'},
@@ -353,21 +352,16 @@ let CRS = [];
 let selId = null;
 let activeStageFilter = null;
 
-function saveToStorage(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(CRS)); }catch(e){}
+async function saveToStorage(){
+  try{ await sbUpsert('project_crs',{project_id:PROJECT_ID,crs:CRS,updated_at:new Date().toISOString()}); }catch(e){}
+  try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(CRS)); }catch(e){}
 }
-function loadFromStorage(){
+async function loadFromStorage(){
   try{
-    // Clear all old keys
-    ['vatsal_cr_tracker_v1','vatsal_cr_tracker_v2','vatsal_cr_tracker_v3'].forEach(k=>{
-      try{localStorage.removeItem(k);}catch(e){}
-    });
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){
-      const parsed = JSON.parse(raw);
-      if(Array.isArray(parsed) && parsed.length > 0){ CRS = parsed; return true; }
-    }
+    const rows=await sbGet('project_crs','project_id=eq.'+PROJECT_ID+'&select=crs');
+    if(rows&&rows.length>0&&rows[0].crs&&rows[0].crs.length>0){ CRS=rows[0].crs; localStorage.setItem(STORAGE_KEY,JSON.stringify(CRS)); return true; }
   }catch(e){}
+  try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw){const p=JSON.parse(raw);if(Array.isArray(p)&&p.length>0){CRS=p;return true;}} }catch(e){}
   return false;
 }
 
@@ -527,7 +521,7 @@ function openDetail(id){
 
 function closeDetail(){ selId=null; document.getElementById('detail-panel').classList.remove('open'); renderTable(); }
 
-function saveCREdit(){
+async function saveCREdit(){
   const c=CRS.find(x=>x.id===selId); if(!c) return;
   c.stage=document.getElementById('e-stage').value;
   c.priority=document.getElementById('e-priority').value;
@@ -571,7 +565,7 @@ function saveCREdit(){
   toast('✓ CR updated and saved');
 }
 
-function deleteCR(){
+async function deleteCR(){
   const c=CRS.find(x=>x.id===selId); if(!c) return;
   if(!confirm(`Delete "${c.id} — ${c.title}"?\n\nThis cannot be undone.`)) return;
   CRS=CRS.filter(x=>x.id!==selId);
@@ -582,7 +576,7 @@ function deleteCR(){
   toast('🗑 CR deleted');
 }
 
-function attachDocument(e){
+async function attachDocument(e){
   const file=e.target.files[0]; if(!file) return;
   const c=CRS.find(x=>x.id===selId); if(!c) return;
   if(file.size>5*1024*1024){ toast('⚠ File too large (max 5MB)'); e.target.value=''; return; }
@@ -598,10 +592,10 @@ function attachDocument(e){
   e.target.value='';
 }
 function downloadDoc(crId,idx){ const c=CRS.find(x=>x.id===crId); if(!c||!c.docs||!c.docs[idx]) return; const a=document.createElement('a'); a.href=c.docs[idx].data; a.download=c.docs[idx].name; a.click(); }
-function deleteDoc(crId,idx){ const c=CRS.find(x=>x.id===crId); if(!c||!c.docs||!c.docs[idx]) return; if(!confirm(`Remove "${c.docs[idx].name}" from this CR?`)) return; c.docs.splice(idx,1); saveToStorage(); renderDocsDisplay(c); toast('🗑 Document removed'); }
+async function deleteDoc(crId,idx){ const c=CRS.find(x=>x.id===crId); if(!c||!c.docs||!c.docs[idx]) return; if(!confirm(`Remove "${c.docs[idx].name}" from this CR?`)) return; c.docs.splice(idx,1); saveToStorage(); renderDocsDisplay(c); toast('🗑 Document removed'); }
 
 function toggleAddForm(){ document.getElementById('add-form').classList.toggle('open'); }
-function saveCR(){
+async function saveCR(){
   const id=document.getElementById('nc-id').value.trim();
   const title=document.getElementById('nc-title').value.trim();
   if(!id||!title){ toast('CR ID and Title are required'); return; }
@@ -652,11 +646,9 @@ function saveUsersCR(u){ try{localStorage.setItem(USERS_KEY_CR,JSON.stringify(u)
 
 function doLogout(){ localStorage.removeItem(SESSION_KEY_CR); window.location.href='login.html'; }
 
-function requestEditAccess(){
-  const s = getSessionCR();
-  const users = getUsersCR();
-  const u = users.find(x=>x.username===s.username);
-  if(u){ u.requestedEdit=true; saveUsersCR(users); }
+async function requestEditAccess(){
+  const s=getSessionCR();
+  try{ await sbUpdate('users',{requested_edit:true},'username=eq.'+s.username.toLowerCase()); }catch(e){}
   document.getElementById('req-edit-btn').textContent='⏳ Request Sent';
   document.getElementById('req-edit-btn').disabled=true;
   toast('✓ Edit access request sent to Admin');
@@ -688,35 +680,40 @@ function applyPermissions(role){
 }
 
 // Init
-// Set page title based on active project
-if(activeProject && activeProject.name){
-  document.getElementById('page-title').textContent = activeProject.icon+' '+activeProject.name;
-  document.getElementById('hdr-project').textContent = activeProject.name+' Feature Development';
-  document.title = activeProject.name+' — CR Tracker';
-}
+(async function(){
+  // Check session first
+  const crSession = getSessionCR();
+  if(!crSession || !crSession.username){ window.location.href='login.html'; return; }
 
-// For non-RMS projects, don't load default Risk CRs — start fresh
-const isRMS = !activeProject.id || activeProject.id === 'rms';
-const loaded=loadFromStorage();
-if(!loaded){
-  CRS = isRMS ? JSON.parse(JSON.stringify(DEFAULT_CRS)) : [];
-  saveToStorage();
-}
-document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-renderStagePills();
-renderTable();
-
-// Apply session + permissions
-const crSession = getSessionCR();
-if(!crSession || !crSession.username){ window.location.href='login.html'; }
-else {
+  // Show user info
   document.getElementById('cr-user-name').textContent = crSession.name || crSession.username;
   const rb = document.getElementById('cr-user-role');
-  if(crSession.role==='admin'){ rb.textContent='Admin'; rb.style.background='#4f8ef733'; rb.style.color='#4f8ef7'; }
-  else if(crSession.role==='editor'){ rb.textContent='Editor'; rb.style.background='#34d39933'; rb.style.color='#34d399'; }
-  else { rb.textContent='Viewer'; rb.style.background='#6b728033'; rb.style.color='#6b7280'; }
+  if(crSession.role==='admin'){ rb.textContent='Admin'; rb.style.background='#eff6ff'; rb.style.color='var(--accent)'; }
+  else if(crSession.role==='editor'){ rb.textContent='Editor'; rb.style.background='#f0fdf4'; rb.style.color='var(--green)'; }
+  else { rb.textContent='Viewer'; rb.style.background='#f8fafc'; rb.style.color='var(--muted)'; }
   applyPermissions(crSession.role);
-}
+
+  // Set page title
+  if(activeProject && activeProject.name){
+    document.getElementById('page-title').textContent = activeProject.icon+' '+activeProject.name;
+    document.getElementById('hdr-project').textContent = activeProject.name+' Feature Development';
+    document.title = activeProject.name+' — CR Tracker';
+  }
+  document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  // Show loading
+  document.getElementById('cr-tbody').innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">⏳ Loading CRs...</td></tr>`;
+
+  // Load CRs from Supabase
+  const isRMS = !activeProject.id || activeProject.id === 'rms';
+  const loaded = await loadFromStorage();
+  if(!loaded){
+    CRS = isRMS ? JSON.parse(JSON.stringify(DEFAULT_CRS)) : [];
+    await saveToStorage();
+  }
+  renderStagePills();
+  renderTable();
+})();
 </script>
 </body>
 </html>

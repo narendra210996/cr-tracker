@@ -139,7 +139,7 @@ h2{font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;}
         <label>Password</label>
         <div class="input-wrap"><span class="icon">🔒</span><input type="password" id="l-pass" placeholder="Enter your password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
       </div>
-      <button class="btn-main" onclick="doLogin()">Sign In →</button>
+      <button class="btn-main" id="login-btn" onclick="doLogin()">Sign In →</button>
       <button class="link-btn" onclick="showTab('forgot')">Forgot your password?</button>
     </div>
 
@@ -183,7 +183,7 @@ h2{font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;}
       <div id="edit-notice" style="display:none;font-size:11px;color:var(--amber);background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:8px 10px;margin-bottom:12px;">
         ⏳ Edit access pending — Admin must approve before you can make changes.
       </div>
-      <button class="btn-main" onclick="doRegister()">Create Account →</button>
+      <button class="btn-main" id="reg-btn" onclick="doRegister()">Create Account →</button>
     </div>
 
     <!-- FORGOT PASSWORD -->
@@ -255,124 +255,151 @@ h2{font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;}
 </div>
 
 <script>
-const USERS_KEY='narendra_hub_users_v1';
-const SESSION_KEY='narendra_hub_session';
-const DEFAULT_USERS=[{username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false,dob:'1990-01-01'}];
+const SUPA_URL="https://ixbfzbxzqjwtxwvpwdvp.supabase.co";
+const SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4YmZ6Ynh6cWp3dHh3dnB3ZHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NTQ5MDEsImV4cCI6MjA4OTEzMDkwMX0.ZyNrWiSUjnw22aJkUxIyucd6TuRxFdrYVFw0Dmec3BE";
+async function sbGet(table,q=''){try{const r=await fetch(SUPA_URL+'/rest/v1/'+table+'?'+q,{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});if(r.ok)return await r.json();}catch(e){}return null;}
+async function sbUpsert(table,data){try{const r=await fetch(SUPA_URL+'/rest/v1/'+table,{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},body:JSON.stringify(data)});return r.ok;}catch(e){return false;}}
+async function sbUpdate(table,data,filter){try{const r=await fetch(SUPA_URL+'/rest/v1/'+table+'?'+filter,{method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify(data)});return r.ok;}catch(e){return false;}}
+</script>
+<script>
+const SESSION_KEY = 'narendra_hub_session';
 
-function getUsers(){try{const r=localStorage.getItem(USERS_KEY);if(r){const u=JSON.parse(r);if(Array.isArray(u)&&u.length>0)return u;}}catch(e){}const u=JSON.parse(JSON.stringify(DEFAULT_USERS));saveUsers(u);return u;}
-function saveUsers(u){try{localStorage.setItem(USERS_KEY,JSON.stringify(u));}catch(e){}}
+const DEFAULT_USERS = [
+  {username:'Narendra', password:'Narendra@21', name:'Narendra', role:'admin', status:'active', requested_edit:false, dob:'1990-01-01'},
+  {username:'viewer',   password:'View@123',    name:'Guest Viewer', role:'viewer', status:'active', requested_edit:false, dob:'2000-01-01'}
+];
 
 function showTab(t){
-  ['login','register','forgot'].forEach(p=>{
-    document.getElementById('pane-'+p).style.display=p===t?'block':'none';
-  });
+  ['login','register','forgot'].forEach(p=>{ document.getElementById('pane-'+p).style.display=p===t?'block':'none'; });
   document.getElementById('tab-login').classList.toggle('active',t==='login');
   document.getElementById('tab-reg').classList.toggle('active',t==='register');
   document.getElementById('tab-forgot').classList.toggle('active',t==='forgot');
-  if(t==='forgot'){
-    document.getElementById('fp-step1').style.display='block';
-    document.getElementById('fp-step2').style.display='none';
-    document.getElementById('fp-step3').style.display='none';
-  }
+  if(t==='forgot'){ document.getElementById('fp-step1').style.display='block'; document.getElementById('fp-step2').style.display='none'; document.getElementById('fp-step3').style.display='none'; }
 }
+function showErr(id,msg){ const e=document.getElementById(id); e.textContent=msg; e.classList.add('show'); }
+function hideErr(id){ document.getElementById(id).classList.remove('show'); }
 
-function doLogin(){
+// ── Login ─────────────────────────────────────────────────────────────────────
+async function doLogin(){
+  hideErr('login-err');
   const u=document.getElementById('l-user').value.trim();
   const p=document.getElementById('l-pass').value;
-  const err=document.getElementById('login-err');
-  err.classList.remove('show');
-  if(!u||!p){err.textContent='Please enter username and password.';err.classList.add('show');return;}
-  const users=getUsers();
-  const user=users.find(x=>x.username.toLowerCase()===u.toLowerCase()&&x.password===p);
-  if(!user){err.textContent='Invalid username or password.';err.classList.add('show');return;}
-  localStorage.setItem(SESSION_KEY,JSON.stringify({username:user.username,name:user.name,role:user.role,loginTime:Date.now()}));
-  window.location.href='index.html';
+  if(!u||!p){ showErr('login-err','Please enter username and password.'); return; }
+  const btn=document.getElementById('login-btn');
+  btn.disabled=true; btn.textContent='Signing in...';
+
+  // Step 1: Check hardcoded defaults (always works)
+  const def=DEFAULT_USERS.find(x=>x.username.toLowerCase()===u.toLowerCase()&&x.password===p);
+  if(def){
+    localStorage.setItem(SESSION_KEY,JSON.stringify({username:def.username,name:def.name,role:def.role,loginTime:Date.now()}));
+    window.location.href='index.html'; return;
+  }
+
+  // Step 2: Check Supabase (registered users from any device)
+  try{
+    const rows=await sbGet('users','username=eq.'+u.toLowerCase()+'&select=*');
+    if(rows&&rows.length>0){
+      const user=rows[0];
+      if(user.password!==p){ showErr('login-err','Invalid username or password.'); btn.disabled=false; btn.textContent='Sign In →'; return; }
+      localStorage.setItem(SESSION_KEY,JSON.stringify({username:user.username,name:user.name,role:user.role,loginTime:Date.now()}));
+      window.location.href='index.html'; return;
+    }
+  }catch(e){}
+
+  showErr('login-err','Invalid username or password.');
+  btn.disabled=false; btn.textContent='Sign In →';
 }
 
+// ── Register ──────────────────────────────────────────────────────────────────
 let selectedRight='viewer';
 function selectRight(r){
   selectedRight=r;
-  const v=document.getElementById('r-view'),e=document.getElementById('r-edit'),n=document.getElementById('edit-notice');
-  v.className='right-opt'+(r==='viewer'?' active-view':'');
-  e.className='right-opt'+(r==='editor'?' active-edit':'');
-  n.style.display=r==='editor'?'block':'none';
+  document.getElementById('r-view').className='right-opt'+(r==='viewer'?' active-view':'');
+  document.getElementById('r-edit').className='right-opt'+(r==='editor'?' active-edit':'');
+  document.getElementById('edit-notice').style.display=r==='editor'?'block':'none';
 }
 
-function doRegister(){
+async function doRegister(){
+  hideErr('reg-err'); document.getElementById('reg-suc').classList.remove('show');
   const name=document.getElementById('r-name').value.trim();
   const u=document.getElementById('r-user').value.trim();
   const p=document.getElementById('r-pass').value;
   const dob=document.getElementById('r-dob').value;
-  const err=document.getElementById('reg-err'),suc=document.getElementById('reg-suc');
-  err.classList.remove('show');suc.classList.remove('show');
-  if(!name||!u||!p||!dob){err.textContent='All fields including Date of Birth are required.';err.classList.add('show');return;}
-  if(p.length<6){err.textContent='Password must be at least 6 characters.';err.classList.add('show');return;}
-  const users=getUsers();
-  if(users.find(x=>x.username.toLowerCase()===u.toLowerCase())){err.textContent='Username already taken.';err.classList.add('show');return;}
-  const requestedEdit=selectedRight==='editor';
-  users.push({username:u,password:p,name,role:'viewer',status:'active',requestedEdit,dob});
-  saveUsers(users);
-  suc.textContent=requestedEdit?'✓ Registered! Login now — Edit access active once Admin approves.':'✓ Account created! You can now login with View access.';
-  suc.classList.add('show');
-  ['r-name','r-user','r-pass'].forEach(i=>document.getElementById(i).value='');
-  document.getElementById('r-dob').value='';
-  selectRight('viewer');
-  setTimeout(()=>showTab('login'),2500);
+  if(!name||!u||!p||!dob){ showErr('reg-err','All fields including Date of Birth are required.'); return; }
+  if(p.length<6){ showErr('reg-err','Password must be at least 6 characters.'); return; }
+  if(DEFAULT_USERS.find(x=>x.username.toLowerCase()===u.toLowerCase())){ showErr('reg-err','Username already taken.'); return; }
+  const btn=document.getElementById('reg-btn');
+  btn.disabled=true; btn.textContent='Creating account...';
+  try{
+    // Check if username exists in Supabase
+    const existing=await sbGet('users','username=eq.'+u.toLowerCase());
+    if(existing&&existing.length>0){ showErr('reg-err','Username already taken.'); btn.disabled=false; btn.textContent='Create Account →'; return; }
+    const requestedEdit=selectedRight==='editor';
+    const ok=await sbUpsert('users',{username:u.toLowerCase(),password:p,name,role:'viewer',status:'active',requested_edit:requestedEdit,dob});
+    if(ok){
+      const suc=document.getElementById('reg-suc');
+      suc.textContent=requestedEdit?'✓ Registered! Login now — Edit access active once Admin approves.':'✓ Account created! You can now login.';
+      suc.classList.add('show');
+      ['r-name','r-user','r-pass'].forEach(i=>document.getElementById(i).value='');
+      document.getElementById('r-dob').value='';
+      selectRight('viewer');
+      setTimeout(()=>showTab('login'),2500);
+    } else { showErr('reg-err','Error saving account. Try again.'); }
+  }catch(e){ showErr('reg-err','Connection error. Try again.'); }
+  btn.disabled=false; btn.textContent='Create Account →';
 }
 
+// ── Forgot Password ───────────────────────────────────────────────────────────
 let fpUsername='';
-function fpStep1(){
+async function fpStep1(){
+  hideErr('fp-err1');
   const u=document.getElementById('fp-user').value.trim();
-  const err=document.getElementById('fp-err1');
-  err.classList.remove('show');
-  if(!u){err.textContent='Please enter your username.';err.classList.add('show');return;}
-  const users=getUsers();
-  const user=users.find(x=>x.username.toLowerCase()===u.toLowerCase());
-  if(!user){err.textContent='No account found with that username.';err.classList.add('show');return;}
-  if(!user.dob){err.textContent='No Date of Birth on file. Contact Admin to reset your password.';err.classList.add('show');return;}
-  fpUsername=user.username;
-  document.getElementById('fp-step1').style.display='none';
-  document.getElementById('fp-step2').style.display='block';
+  if(!u){ showErr('fp-err1','Please enter your username.'); return; }
+  const def=DEFAULT_USERS.find(x=>x.username.toLowerCase()===u.toLowerCase());
+  if(def){ fpUsername=u.toLowerCase(); document.getElementById('fp-step1').style.display='none'; document.getElementById('fp-step2').style.display='block'; return; }
+  try{
+    const rows=await sbGet('users','username=eq.'+u.toLowerCase());
+    if(!rows||rows.length===0){ showErr('fp-err1','No account found.'); return; }
+    fpUsername=u.toLowerCase();
+    document.getElementById('fp-step1').style.display='none';
+    document.getElementById('fp-step2').style.display='block';
+  }catch(e){ showErr('fp-err1','Connection error. Try again.'); }
 }
-function fpStep2(){
+async function fpStep2(){
+  hideErr('fp-err2');
   const dob=document.getElementById('fp-dob').value;
-  const err=document.getElementById('fp-err2');
-  err.classList.remove('show');
-  if(!dob){err.textContent='Please enter your Date of Birth.';err.classList.add('show');return;}
-  const users=getUsers();
-  const user=users.find(x=>x.username===fpUsername);
-  if(!user||user.dob!==dob){err.textContent='Date of Birth does not match. Please try again.';err.classList.add('show');return;}
-  document.getElementById('fp-step2').style.display='none';
-  document.getElementById('fp-step3').style.display='block';
+  if(!dob){ showErr('fp-err2','Please enter your Date of Birth.'); return; }
+  const def=DEFAULT_USERS.find(x=>x.username.toLowerCase()===fpUsername);
+  if(def){ if(def.dob!==dob){ showErr('fp-err2','Date of Birth does not match.'); return; } document.getElementById('fp-step2').style.display='none'; document.getElementById('fp-step3').style.display='block'; return; }
+  try{
+    const rows=await sbGet('users','username=eq.'+fpUsername);
+    if(!rows||rows.length===0||rows[0].dob!==dob){ showErr('fp-err2','Date of Birth does not match.'); return; }
+    document.getElementById('fp-step2').style.display='none';
+    document.getElementById('fp-step3').style.display='block';
+  }catch(e){ showErr('fp-err2','Connection error. Try again.'); }
 }
-function fpStep3(){
+async function fpStep3(){
+  hideErr('fp-err3');
   const np=document.getElementById('fp-newpass').value;
   const cp=document.getElementById('fp-confpass').value;
-  const err=document.getElementById('fp-err3'),suc=document.getElementById('fp-suc3');
-  err.classList.remove('show');suc.classList.remove('show');
-  if(!np||!cp){err.textContent='Please fill both fields.';err.classList.add('show');return;}
-  if(np.length<6){err.textContent='Password must be at least 6 characters.';err.classList.add('show');return;}
-  if(np!==cp){err.textContent='Passwords do not match.';err.classList.add('show');return;}
-  const users=getUsers();
-  const user=users.find(x=>x.username===fpUsername);
-  if(user){user.password=np;saveUsers(users);}
-  suc.textContent='✓ Password reset successfully! Redirecting to login...';
+  if(!np||!cp){ showErr('fp-err3','Please fill both fields.'); return; }
+  if(np.length<6){ showErr('fp-err3','Min 6 characters.'); return; }
+  if(np!==cp){ showErr('fp-err3','Passwords do not match.'); return; }
+  try{ await sbUpdate('users',{password:np},'username=eq.'+fpUsername); }catch(e){}
+  const suc=document.getElementById('fp-suc3');
+  suc.textContent='✓ Password reset! Redirecting...';
   suc.classList.add('show');
-  document.getElementById('fp-newpass').value='';
-  document.getElementById('fp-confpass').value='';
   fpUsername='';
   setTimeout(()=>showTab('login'),2200);
 }
 function fpBack(){
   document.getElementById('fp-step2').style.display='none';
   document.getElementById('fp-step1').style.display='block';
-  document.getElementById('fp-err1').classList.remove('show');
   document.getElementById('fp-dob').value='';
   fpUsername='';
 }
 
-const session=(()=>{try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch(e){return null;}})();
-if(session&&session.username){window.location.href='index.html';}
+try{ const s=JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); if(s&&s.username) window.location.href='index.html'; }catch(e){}
 </script>
 </body>
 </html>
