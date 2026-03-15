@@ -306,7 +306,7 @@ const STAGE_SH  = ['Req','Vendor','Dev','QA','UAT','Go Live'];
 const STAGE_IDX = Object.fromEntries(STAGES.map((s,i)=>[s,i]));
 const STAGE_CLS = ['b-req','b-ven','b-dev','b-qa','b-uat','b-gl'];
 const SPILL_CLS = ['sp0','sp1','sp2','sp3','sp4','sp5'];
-const STORAGE_KEY = 'cr_data_' + (PROJECT_ID || 'rms');
+const STORAGE_KEY = 'vatsal_cr_v4';
 const activeProject = (()=>{ try{ return JSON.parse(localStorage.getItem('narendra_active_project')||'{}'); }catch(e){ return {}; } })();
 const PROJECT_ID = activeProject.id || 'rms';
 
