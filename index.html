@@ -196,51 +196,56 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 
 <div class="toast" id="toast"></div>
 
+
 </body>
-</html><script>
+</html>
+<script>
+// ── Supabase ─────────────────────────────────────────────────────────────────
 const SUPA_URL="https://ixbfzbxzqjwtxwvpwdvp.supabase.co";
 const SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4YmZ6Ynh6cWp3dHh3dnB3ZHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NTQ5MDEsImV4cCI6MjA4OTEzMDkwMX0.ZyNrWiSUjnw22aJkUxIyucd6TuRxFdrYVFw0Dmec3BE";
 async function sbGet(t,q){q=q||"";try{const r=await fetch(SUPA_URL+"/rest/v1/"+t+"?"+q,{headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY}});if(r.ok)return await r.json();}catch(e){}return null;}
 async function sbUpsert(t,d){try{const r=await fetch(SUPA_URL+"/rest/v1/"+t,{method:"POST",headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates"},body:JSON.stringify(d)});return r.ok;}catch(e){return false;}}
 async function sbUpdate(t,d,f){try{const r=await fetch(SUPA_URL+"/rest/v1/"+t+"?"+f,{method:"PATCH",headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"application/json"},body:JSON.stringify(d)});return r.ok;}catch(e){return false;}}
 
-const SESSION_KEY='narendra_hub_session';
-const PROJ_KEY='narendra_projects_v1';
-const DEFAULT_USERS=[
-  {username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requested_edit:false,dob:'1990-01-01'},
-  {username:'viewer',password:'View@123',name:'Guest Viewer',role:'viewer',status:'active',requested_edit:false,dob:'2000-01-01'}
-];
-const DEFAULT_PROJECTS=[
+// ── Constants ─────────────────────────────────────────────────────────────────
+const SESSION_KEY = 'narendra_hub_session';
+const PROJ_KEY = 'narendra_projects_v1';
+const DEFAULT_PROJECTS = [
   {id:'rms',name:'RMS Development',desc:'Risk Management System — margin, MTF, collateral, SQ off and related CRs.',icon:'🔍',color:'#2563eb'},
   {id:'middleware',name:'Middleware',desc:'Middleware layer CRs — API integrations, data flow, and vendor connectivity.',icon:'🔗',color:'#7c3aed'},
   {id:'backoffice',name:'Back Office',desc:'Payout processing, sub-broker commissions, reconciliation and back office ops.',icon:'💼',color:'#d97706'},
   {id:'compliance',name:'Compliance',desc:'SEBI guidelines, DDPI, peak margin reporting and regulatory CRs.',icon:'🛡️',color:'#16a34a'},
 ];
-let PROJECTS=[];
+const DEFAULT_USERS = [
+  {username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requested_edit:false,dob:'1990-01-01'},
+  {username:'viewer',password:'View@123',name:'Guest Viewer',role:'viewer',status:'active',requested_edit:false,dob:'2000-01-01'}
+];
+let PROJECTS = [];
 
-function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch(e){return null;}}
-function doLogout(){localStorage.removeItem(SESSION_KEY);window.location.href='login.html';}
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+// ── Session ───────────────────────────────────────────────────────────────────
+function getSession(){ try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch(e){return null;} }
+function doLogout(){ localStorage.removeItem(SESSION_KEY); window.location.href='login.html'; }
 
 // ── Projects ──────────────────────────────────────────────────────────────────
 async function loadProjects(){
   try{
-    const rows=await sbGet('project_crs','project_id=eq.__projects__&select=crs');
+    const rows = await sbGet('project_crs','project_id=eq.__projects__&select=crs');
     if(rows&&rows.length>0&&rows[0].crs&&rows[0].crs.length>0){
       PROJECTS=rows[0].crs;
       localStorage.setItem(PROJ_KEY,JSON.stringify(PROJECTS));
       return;
     }
   }catch(e){}
-  try{const r=localStorage.getItem(PROJ_KEY);if(r){const p=JSON.parse(r);if(Array.isArray(p)&&p.length>0){PROJECTS=p;return;}}}catch(e){}
+  try{ const r=localStorage.getItem(PROJ_KEY); if(r){const p=JSON.parse(r);if(Array.isArray(p)&&p.length>0){PROJECTS=p;return;}} }catch(e){}
   PROJECTS=JSON.parse(JSON.stringify(DEFAULT_PROJECTS));
   await saveProjects();
 }
 async function saveProjects(){
-  try{localStorage.setItem(PROJ_KEY,JSON.stringify(PROJECTS));}catch(e){}
-  await sbUpsert('project_crs',{project_id:'__projects__',crs:PROJECTS,updated_at:new Date().toISOString()});
+  try{ await sbUpsert('project_crs',{project_id:'__projects__',crs:PROJECTS,updated_at:new Date().toISOString()}); }catch(e){}
+  try{ localStorage.setItem(PROJ_KEY,JSON.stringify(PROJECTS)); }catch(e){}
 }
 
+// ── CR counts from Supabase ───────────────────────────────────────────────────
 async function getCRsForProject(projId){
   try{
     const rows=await sbGet('project_crs','project_id=eq.'+projId+'&select=crs');
@@ -252,14 +257,15 @@ async function getCRsForProject(projId){
 function avgProgress(crs){
   if(!crs.length) return 0;
   const STAGES=['Requirement Gathering','Vendor Data Submission','Development','QA / Testing','UAT','Go Live'];
-  const pcts=crs.map(c=>{if(c.stage==='On Hold')return 0;const i=STAGES.indexOf(c.stage);return Math.round(((i>=0?i:0)+1)/STAGES.length*100);});
+  const pcts=crs.map(c=>{ if(c.stage==='On Hold') return 0; const i=STAGES.indexOf(c.stage); return Math.round(((i>=0?i:0)+1)/STAGES.length*100); });
   return Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length);
 }
-function barColor(p){return p>=80?'#16a34a':p>=40?'#2563eb':'#d97706';}
+function barColor(p){ return p>=80?'#16a34a':p>=40?'#2563eb':'#d97706'; }
 
+// ── Render Projects ───────────────────────────────────────────────────────────
 async function renderProjects(){
   const grid=document.getElementById('projects-grid');
-  grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:32px;">⏳ Loading projects...</div>';
+  grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:32px;font-size:13px;">⏳ Loading projects...</div>';
   let totalCRs=0,inProgress=0,goLive=0;
   const cards=await Promise.all(PROJECTS.map(async proj=>{
     const crs=await getCRsForProject(proj.id);
@@ -267,7 +273,7 @@ async function renderProjects(){
     const active=crs.filter(c=>c.stage!=='Go Live'&&c.stage!=='On Hold').length;
     const onHold=crs.filter(c=>c.stage==='On Hold').length;
     const pct=avgProgress(crs),fill=barColor(pct);
-    totalCRs+=total;inProgress+=active;goLive+=done;
+    totalCRs+=total; inProgress+=active; goLive+=done;
     const tags=total>0
       ?`<span class="proj-tag">✅ ${done} Go Live</span><span class="proj-tag">🔄 ${active} Active</span>${onHold?`<span class="proj-tag">⏸ ${onHold} On Hold</span>`:''}` 
       :'<span class="proj-tag">No CRs yet</span>';
@@ -290,24 +296,23 @@ async function renderProjects(){
 }
 
 function openProject(id){
-  const proj=PROJECTS.find(p=>p.id===id);if(!proj)return;
+  const proj=PROJECTS.find(p=>p.id===id); if(!proj) return;
   localStorage.setItem('narendra_active_project',JSON.stringify({id:proj.id,name:proj.name,icon:proj.icon,color:proj.color}));
   window.location.href='index2.html?project='+proj.id;
 }
-function openModal(){document.getElementById('modal').classList.add('open');}
-function closeModal(){document.getElementById('modal').classList.remove('open');}
+function openModal(){ document.getElementById('modal').classList.add('open'); }
+function closeModal(){ document.getElementById('modal').classList.remove('open'); }
 async function saveProject(){
   const name=document.getElementById('m-name').value.trim();
-  if(!name){toast('Project name is required');return;}
+  if(!name){ toast('Project name is required'); return; }
   const id=name.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+Date.now();
   PROJECTS.push({id,name,desc:document.getElementById('m-desc').value||'No description.',icon:document.getElementById('m-icon').value,color:document.getElementById('m-color').value});
-  await saveProjects();
-  closeModal();renderProjects();toast('✓ Project added');
+  await saveProjects(); closeModal(); renderProjects(); toast('✓ Project added');
 }
 
 // ── Admin Panel ───────────────────────────────────────────────────────────────
-function openAdminPanel(){renderAdminPanel();document.getElementById('admin-modal').style.display='flex';}
-function closeAdminPanel(){document.getElementById('admin-modal').style.display='none';}
+function openAdminPanel(){ renderAdminPanel(); document.getElementById('admin-modal').style.display='flex'; }
+function closeAdminPanel(){ document.getElementById('admin-modal').style.display='none'; }
 
 async function renderAdminPanel(){
   const pr=document.getElementById('pending-requests'),al=document.getElementById('all-users-list'),cb=document.getElementById('user-count-badge');
@@ -316,12 +321,10 @@ async function renderAdminPanel(){
   let users=[...DEFAULT_USERS];
   try{
     const rows=await sbGet('users','select=*&order=created_at.asc');
-    if(rows&&rows.length>0){
-      rows.forEach(r=>{if(!DEFAULT_USERS.find(d=>d.username.toLowerCase()===r.username.toLowerCase()))users.push(r);});
-    }
+    if(rows&&rows.length>0) rows.forEach(r=>{ if(!DEFAULT_USERS.find(d=>d.username.toLowerCase()===r.username.toLowerCase())) users.push(r); });
   }catch(e){}
-  if(cb)cb.textContent=`${users.length} user${users.length!==1?'s':''}`;
-  const pending=users.filter(u=>(u.requested_edit||u.requestedEdit)&&u.role==='viewer');
+  if(cb) cb.textContent=`${users.length} user${users.length!==1?'s':''}`;
+  const pending=users.filter(u=>u.requested_edit&&u.role==='viewer');
   pr.innerHTML=!pending.length
     ?'<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px 0;">No pending requests</div>'
     :pending.map(u=>`<div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:8px;">
@@ -338,7 +341,7 @@ async function renderAdminPanel(){
       <div style="font-size:13px;font-weight:600;">${u.name} <span style="font-size:11px;color:var(--muted);">@${u.username}</span></div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
         <span style="font-size:11px;font-weight:700;color:${roleColor(u.role)};">${roleLabel(u.role)}</span>
-        ${(u.requested_edit||u.requestedEdit)?'<span style="font-size:10px;color:var(--amber);background:#fffbeb;padding:2px 7px;border-radius:10px;">Edit Requested</span>':''}
+        ${u.requested_edit?'<span style="font-size:10px;color:var(--amber);background:#fffbeb;padding:2px 7px;border-radius:10px;">Edit Requested</span>':''}
       </div>
     </div>
     ${u.username.toLowerCase()===session.username.toLowerCase()
@@ -353,229 +356,32 @@ async function renderAdminPanel(){
         </div>`}
   </div>`).join('');
 }
-async function approveEdit(username){await sbUpdate('users',{role:'editor',requested_edit:false},'username=eq.'+username.toLowerCase());renderAdminPanel();toast('✓ Edit access granted');}
-async function declineEdit(username){await sbUpdate('users',{requested_edit:false},'username=eq.'+username.toLowerCase());renderAdminPanel();toast('✕ Request declined');}
-async function changeRole(username,newRole){await sbUpdate('users',{role:newRole,requested_edit:false},'username=eq.'+username.toLowerCase());renderAdminPanel();toast('✓ Role updated');}
+
+async function approveEdit(username){ await sbUpdate('users',{role:'editor',requested_edit:false},'username=eq.'+username.toLowerCase()); renderAdminPanel(); toast('✓ Edit access granted'); }
+async function declineEdit(username){ await sbUpdate('users',{requested_edit:false},'username=eq.'+username.toLowerCase()); renderAdminPanel(); toast('✕ Request declined'); }
+async function changeRole(username,newRole){ await sbUpdate('users',{role:newRole,requested_edit:false},'username=eq.'+username.toLowerCase()); renderAdminPanel(); toast('✓ Role updated'); }
 async function adminResetPassword(username){
   const p=prompt('Set new password for @'+username+':');
-  if(!p||p.length<6){toast('⚠ Min 6 characters');return;}
+  if(!p||p.length<6){ toast('⚠ Min 6 characters'); return; }
   await sbUpdate('users',{password:p},'username=eq.'+username.toLowerCase());
   toast('✓ Password reset for '+username);
 }
 
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+
 // ── Init ─────────────────────────────────────────────────────────────────────
 (async function(){
   const session=getSession();
-  if(!session||!session.username){window.location.href='login.html';return;}
+  if(!session||!session.username){ window.location.href='login.html'; return; }
   document.getElementById('user-name').textContent=session.name||session.username;
   const rb=document.getElementById('user-role-badge');
-  if(session.role==='admin'){rb.textContent='Admin';rb.style.background='#eff6ff';rb.style.color='var(--accent)';document.getElementById('admin-btn').style.display='block';}
-  else if(session.role==='editor'){rb.textContent='Editor';rb.style.background='#f0fdf4';rb.style.color='var(--green)';}
-  else{rb.textContent='Viewer';rb.style.background='#f8fafc';rb.style.color='var(--muted)';}
-  await loadProjects();
+  if(session.role==='admin'){ rb.textContent='Admin'; rb.style.background='#eff6ff'; rb.style.color='var(--accent)'; document.getElementById('admin-btn').style.display='block'; }
+  else if(session.role==='editor'){ rb.textContent='Editor'; rb.style.background='#f0fdf4'; rb.style.color='var(--green)'; }
+  else{ rb.textContent='Viewer'; rb.style.background='#f8fafc'; rb.style.color='var(--muted)'; }
   document.getElementById('top-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short',year:'numeric'});
-  await renderProjects();
+  await loadProjects();
+  renderProjects();
 })();
 </script>
-</body>
-</htmlE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Project Dashboard — Narendra</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --bg:#f5f7fa;--surface:#ffffff;--surface2:#f0f3fa;--border:#e8ecf1;--border2:#d1d9e0;
-  --text:#1a1f2e;--muted:#8492a6;--accent:#2563eb;--accent2:#1d4ed8;--green:#16a34a;
-  --amber:#d97706;--red:#dc2626;--purple:#7c3aed;
-  --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.06);
-}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:0;}
-body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle,#cbd5e1 1px,transparent 1px);background-size:28px 28px;opacity:.45;pointer-events:none;z-index:0;}
-.wrapper{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:40px 32px;}
-
-/* Header */
-.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:40px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 20px;box-shadow:var(--shadow);}
-.logo{display:flex;align-items:center;gap:10px;}
-.logo-dot{width:10px;height:10px;background:var(--accent);border-radius:50%;box-shadow:0 0 8px rgba(37,99,235,.4);}
-.logo-text{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;}
-.top-date{font-size:11px;color:var(--muted);background:var(--bg);border:1px solid var(--border);padding:5px 12px;border-radius:20px;}
-
-/* Hero */
-.hero{margin-bottom:36px;}
-.hero-label{font-size:11px;font-weight:600;color:var(--accent);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px;}
-.hero-title{font-size:32px;font-weight:700;color:var(--text);line-height:1.2;margin-bottom:8px;}
-.hero-title span{color:var(--accent);}
-.hero-sub{font-size:14px;color:var(--muted);line-height:1.7;}
-
-/* Summary strip */
-.summary-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:36px;}
-.sum-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);}
-.sum-val{font-size:28px;font-weight:700;color:var(--text);line-height:1;}
-.sum-lbl{font-size:11px;color:var(--muted);margin-top:6px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;}
-.sum-card.ac .sum-val{color:var(--accent);}
-.sum-card.gr .sum-val{color:var(--green);}
-.sum-card.am .sum-val{color:var(--amber);}
-.sum-card.pu .sum-val{color:var(--purple);}
-
-/* Section heading */
-.sec-head{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
-.sec-head-line{flex:1;height:1px;background:var(--border);}
-.sec-head-txt{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;}
-
-/* Project cards */
-.projects-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:40px;}
-.proj-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:24px;cursor:pointer;transition:all .2s;box-shadow:var(--shadow);}
-.proj-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 32px rgba(37,99,235,.1);}
-.proj-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;}
-.proj-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-.proj-arrow{font-size:18px;color:var(--muted);transition:all .2s;}
-.proj-card:hover .proj-arrow{color:var(--accent);transform:translateX(3px);}
-.proj-name{font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;}
-.proj-desc{font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:18px;}
-.proj-bar-wrap{margin-bottom:8px;}
-.proj-bar-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
-.proj-bar-lbl{font-size:11px;color:var(--muted);}
-.proj-bar-pct{font-size:12px;font-weight:700;}
-.proj-bar-bg{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;border:1px solid var(--border);}
-.proj-bar-fill{height:100%;border-radius:3px;transition:width .6s ease;}
-.proj-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
-.proj-tag{font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;border:1px solid var(--border);color:var(--muted);background:var(--bg);}
-
-/* Add project card */
-.proj-card-add{background:#fff;border:1.5px dashed var(--border2);border-radius:14px;padding:24px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:200px;box-shadow:var(--shadow);}
-.proj-card-add:hover{border-color:var(--accent);background:#f8fbff;}
-.proj-card-add .add-icon{font-size:28px;color:var(--muted);}
-.proj-card-add .add-txt{font-size:13px;color:var(--muted);font-weight:500;}
-
-/* Modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(15,20,30,.5);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;}
-.modal-overlay.open{display:flex;}
-.modal{background:#fff;border:1px solid var(--border);border-radius:16px;padding:28px;width:460px;max-width:90vw;box-shadow:0 8px 40px rgba(0,0,0,.12);}
-.modal-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:20px;}
-.modal-grid{display:grid;gap:12px;margin-bottom:20px;}
-.modal-grid input,.modal-grid select{font-size:13px;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);outline:none;width:100%;font-family:inherit;transition:border .15s;}
-.modal-grid input:focus,.modal-grid select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.08);}
-.modal-btns{display:flex;gap:8px;justify-content:flex-end;}
-.mbtn{font-size:12px;font-weight:600;padding:8px 18px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;transition:all .15s;font-family:inherit;}
-.mbtn:hover{background:var(--border);}
-.mbtn-primary{background:var(--accent);color:#fff;border-color:var(--accent);}
-.mbtn-primary:hover{background:var(--accent2);}
-
-/* Toast */
-.toast{position:fixed;bottom:24px;right:24px;background:#1a1f2e;color:#fff;font-size:12px;font-weight:600;padding:10px 18px;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;z-index:999;}
-.toast.show{opacity:1;transform:translateY(0);}
-
-@media(max-width:640px){
-  .projects-grid{grid-template-columns:1fr;}
-  .summary-strip{grid-template-columns:1fr 1fr;}
-  .hero-title{font-size:24px;}
-  .wrapper{padding:20px 16px;}
-}
-</style>
-</head>
-<body>
-<div class="wrapper">
-  <div class="top-bar">
-    <div class="logo">
-      <div class="logo-dot"></div>
-      <div class="logo-text">Narendra · Project Hub</div>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <div class="top-date" id="top-date"></div>
-      <div id="user-badge" style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:12px;">
-        <span id="user-name" style="color:var(--text);font-weight:600;"></span>
-        <span id="user-role-badge" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;"></span>
-      </div>
-      <button id="admin-btn" onclick="openAdminPanel()" style="display:none;background:#fff;border:1px solid var(--border);color:var(--accent);font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;cursor:pointer;font-family:inherit;transition:all .15s;">⚙ Admin</button>
-      <button onclick="doLogout()" style="background:#fff;border:1px solid var(--border);color:var(--muted);font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;cursor:pointer;font-family:inherit;transition:all .15s;">Sign out</button>
-    </div>
-  </div>
-
-  <div class="hero">
-    <div class="hero-label">BA Dashboard</div>
-    <div class="hero-title">All Projects,<br><span>One Place.</span></div>
-    <div class="hero-sub">Click any project to view its CR Tracker — track stages, UAT, delivery dates and progress.</div>
-  </div>
-
-  <div class="summary-strip">
-    <div class="sum-card ac"><div class="sum-val" id="s-projects">0</div><div class="sum-lbl">Total Projects</div></div>
-    <div class="sum-card gr"><div class="sum-val" id="s-crs">0</div><div class="sum-lbl">Total CRs</div></div>
-    <div class="sum-card am"><div class="sum-val" id="s-inprogress">0</div><div class="sum-lbl">In Progress</div></div>
-    <div class="sum-card pu"><div class="sum-val" id="s-done">0</div><div class="sum-lbl">Go Live</div></div>
-  </div>
-
-  <div class="sec-head">
-    <div class="sec-head-txt">Your Projects</div>
-    <div class="sec-head-line"></div>
-  </div>
-
-  <div class="projects-grid" id="projects-grid"></div>
-</div>
-
-<!-- Add Project Modal -->
-<div class="modal-overlay" id="modal">
-  <div class="modal">
-    <div class="modal-title">Add New Project</div>
-    <div class="modal-grid">
-      <input type="text" id="m-name" placeholder="Project name  e.g. Settlement Module"/>
-      <input type="text" id="m-desc" placeholder="Short description"/>
-      <select id="m-icon">
-        <option value="🏗️">🏗️ Development</option>
-        <option value="📊">📊 Reporting</option>
-        <option value="⚙️">⚙️ Operations</option>
-        <option value="🛡️">🛡️ Compliance</option>
-        <option value="📱">📱 App</option>
-        <option value="🔗">🔗 Middleware</option>
-        <option value="💼">💼 Back Office</option>
-        <option value="🔍">🔍 Risk</option>
-      </select>
-      <select id="m-color">
-        <option value="#4f8ef7">Blue</option>
-        <option value="#34d399">Green</option>
-        <option value="#fbbf24">Amber</option>
-        <option value="#a78bfa">Purple</option>
-        <option value="#f87171">Red</option>
-        <option value="#22d3ee">Cyan</option>
-      </select>
-    </div>
-    <div class="modal-btns">
-      <button class="mbtn" onclick="closeModal()">Cancel</button>
-      <button class="mbtn mbtn-primary" onclick="saveProject()">Add Project</button>
-    </div>
-  </div>
-</div>
-
-<!-- Admin Panel -->
-<div class="modal-overlay" id="admin-modal" style="display:none;">
-  <div style="background:#fff;border:1px solid var(--border);border-radius:16px;padding:28px;width:600px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.12);">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <div class="modal-title" style="margin-bottom:0;">⚙ Admin Panel — User Management</div>
-      <button onclick="closeAdminPanel()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;">×</button>
-    </div>
-
-    <!-- Pending Edit Requests -->
-    <div style="margin-bottom:20px;">
-      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">📬 Pending Edit Access Requests</div>
-      <div id="pending-requests"></div>
-    </div>
-
-    <!-- All Users -->
-    <div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">👥 All Registered Users</div>
-        <div id="user-count-badge" style="font-size:11px;font-weight:700;background:var(--surface2);border:1px solid var(--border);padding:3px 10px;border-radius:20px;color:var(--text);"></div>
-      </div>
-      <div id="all-users-list"></div>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-
 </body>
 </html>
