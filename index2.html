@@ -47,6 +47,21 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .filter-bar input{flex:1;min-width:180px;}
 .filter-bar select{min-width:130px;}
 .tag{font-size:11px;color:var(--muted);padding:4px 10px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);}
+.assignee-pill{font-size:11px;font-weight:700;background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;padding:3px 9px;border-radius:20px;display:inline-block;white-space:nowrap;}
+.assignee-pill.unassigned{background:#f8fafc;color:#64748b;border-color:#e2e8f0;}
+.notif-wrap{position:relative;display:inline-flex;align-items:center;}
+.notif-btn{background:#fff;border:1.5px solid var(--border);color:var(--text);font-size:12px;font-weight:700;padding:7px 12px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;position:relative;}
+.notif-btn.has{background:#fff7ed;border-color:#fed7aa;color:#c2410c;}
+.notif-count{position:absolute;top:-7px;right:-7px;background:#dc2626;color:#fff;font-size:10px;font-weight:800;min-width:17px;height:17px;border-radius:999px;display:none;align-items:center;justify-content:center;padding:0 5px;line-height:17px;border:2px solid #fff;}
+.notif-panel{display:none;position:absolute;right:0;top:42px;width:340px;max-height:380px;overflow:auto;background:#fff;border:1.5px solid var(--border);border-radius:12px;box-shadow:0 12px 40px rgba(15,23,42,.18);z-index:1000;}
+.notif-panel.open{display:block;}
+.notif-head{padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:800;color:var(--text);display:flex;align-items:center;justify-content:space-between;}
+.notif-item{padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;background:#fff;transition:background .12s;}
+.notif-item:hover{background:#f8faff;}
+.notif-item.unread{background:#eff6ff;}
+.notif-msg{font-size:12px;font-weight:650;color:var(--text);line-height:1.4;}
+.notif-meta{font-size:10px;color:var(--muted);margin-top:4px;}
+.notif-empty{padding:18px 14px;font-size:12px;color:var(--muted);text-align:center;}
 /* Add form */
 .add-form-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:18px;display:none;box-shadow:var(--shadow);}
 .add-form-wrap.open{display:block;}
@@ -181,6 +196,10 @@ async function sbUpdate(t,d,f){try{const r=await fetch(SUPA_URL+"/rest/v1/"+t+"?
       <span id="cr-user-name" style="font-weight:600;color:var(--text);"></span>
       <span id="cr-user-role" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;"></span>
     </div>
+    <div class="notif-wrap" id="notif-wrap" style="display:none;">
+      <button id="notif-btn" onclick="toggleNotifications()" class="notif-btn">🔔 Notifications <span id="notif-count" class="notif-count">0</span></button>
+      <div id="notif-panel" class="notif-panel"></div>
+    </div>
     <button id="req-edit-btn" onclick="requestEditAccess()" style="display:none;" class="btn">🔓 Request Edit Access</button>
     <button class="btn btn-green" onclick="exportCSV()">⬇ Export to Excel</button>
     <button class="btn" onclick="importJSON()">📂 Import Backup</button>
@@ -209,6 +228,9 @@ async function sbUpdate(t,d,f){try{const r=await fetch(SUPA_URL+"/rest/v1/"+t+"?
     <option>Go Live</option>
     <option>On Hold</option>
   </select>
+  <select id="f-assignee" onchange="renderTable()">
+    <option value="">All assignees</option>
+  </select>
   <select id="f-uat" onchange="renderTable()">
     <option value="">UAT: All</option>
     <option value="Yes">Signed Off</option>
@@ -224,6 +246,7 @@ async function sbUpdate(t,d,f){try{const r=await fetch(SUPA_URL+"/rest/v1/"+t+"?
     <input type="text" id="nc-title" placeholder="CR Title"/>
     <select id="nc-pri"><option>High</option><option>Medium</option><option>Low</option></select>
     <input type="text" id="nc-requester" placeholder="Requester / Stakeholder"/>
+    <select id="nc-assignee"><option value="">Assignee: Unassigned</option></select>
     <input type="date" id="nc-delivery"/>
     <select id="nc-stage">
       <option>Requirement Gathering</option><option>Vendor Data Submission</option>
@@ -272,6 +295,7 @@ async function sbUpdate(t,d,f){try{const r=await fetch(SUPA_URL+"/rest/v1/"+t+"?
         <option>Development</option><option>QA / Testing</option>
         <option>Observation Raised</option><option>UAT</option><option>Go Live</option><option>On Hold</option>
       </select>
+      <select id="e-assignee"><option value="">Assignee: Unassigned</option></select>
       <select id="e-priority"><option>High</option><option>Medium</option><option>Low</option></select>
       <input type="date" id="e-delivery"/>
       <select id="e-uat"><option value="No">UAT: Pending</option><option value="Yes">UAT: Signed Off</option></select>
@@ -291,7 +315,7 @@ async function sbUpdate(t,d,f){try{const r=await fetch(SUPA_URL+"/rest/v1/"+t+"?
     <table>
       <thead><tr>
         <th style="width:76px;">CR ID</th><th>Title</th>
-        <th style="width:100px;">Requester</th><th style="width:76px;">Priority</th>
+        <th style="width:100px;">Requester</th><th style="width:115px;">Assignee</th><th style="width:76px;">Priority</th>
         <th style="width:140px;">Stage</th><th style="width:100px;">Delivery</th>
         <th style="width:76px;">UAT</th><th style="width:100px;">Progress</th>
       </tr></thead>
@@ -356,6 +380,10 @@ const DEFAULT_CRS = [
 let CRS = [];
 let selId = null;
 let activeStageFilter = null;
+let CURRENT_USER = null;
+let PROJECT_CAN_EDIT = false;
+let ASSIGNEE_USERS = [];
+let NOTIFICATIONS = [];
 
 async function saveToStorage(){
   try{
@@ -385,6 +413,10 @@ function priCls(p){ return p==='High'?'b-high':p==='Medium'?'b-med':'b-low'; }
 function stageCls(s){ if(s==='On Hold') return 'b-hold'; return STAGE_CLS[STAGE_IDX[s]??0]||'b-req'; }
 function isOverdue(cr){ if(!cr.planned||cr.stage==='Go Live') return false; const d=new Date(cr.planned); return !isNaN(d)&&d<new Date(); }
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+function escHtml(v){ return String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function assigneeLabel(v){ if(!v) return 'Unassigned'; const u=ASSIGNEE_USERS.find(x=>normUserCR(x.username)===normUserCR(v)); return (u && (u.name||u.username)) || v; }
+function canUpdateCR(cr){ return PROJECT_CAN_EDIT || (!!cr && !!CURRENT_USER && normUserCR(cr.assignee)===normUserCR(CURRENT_USER.username)); }
+function canDeleteCurrentCR(){ return PROJECT_CAN_EDIT; }
 
 // Convert any date string to YYYY-MM-DD for date input
 function toInputDate(val){
@@ -427,11 +459,14 @@ function renderTable(){
   const fp=document.getElementById('f-priority').value;
   const fs=document.getElementById('f-stage').value;
   const fu=document.getElementById('f-uat').value;
+  const fa=document.getElementById('f-assignee')?document.getElementById('f-assignee').value:'';
   const rows=CRS.filter(c=>{
     if(q&&!c.id.toLowerCase().includes(q)&&!c.title.toLowerCase().includes(q)) return false;
     if(fp&&c.priority!==fp) return false;
     if(fs&&c.stage!==fs) return false;
     if(fu&&c.uat!==fu) return false;
+    if(fa==='__unassigned__' && c.assignee) return false;
+    if(fa && fa!=='__unassigned__' && normUserCR(c.assignee)!==normUserCR(fa)) return false;
     return true;
   });
   document.getElementById('result-count').textContent=`${rows.length} CR${rows.length!==1?'s':''}`;
@@ -445,13 +480,14 @@ function renderTable(){
       <td><span class="cr-id">${c.id}</span></td>
       <td><span class="cr-title">${c.title}</span>${docBadge}</td>
       <td style="font-size:11px;color:var(--muted);">${c.requester}</td>
+      <td><span class="assignee-pill ${c.assignee?'':'unassigned'}">${escHtml(assigneeLabel(c.assignee))}</span></td>
       <td><span class="badge ${priCls(c.priority)}">${c.priority}</span></td>
       <td><span class="badge ${stageCls(c.stage)}">${c.stage}</span></td>
       <td style="font-size:11px;" class="${od?'overdue-flag':''}">${c.planned ? formatDate(c.planned) : '—'}${od?' ⚠':''}</td>
       <td><span class="badge ${c.uat==='Yes'?'b-done':'b-todo'}">${c.uat==='Yes'?'Done':'Pending'}</span></td>
       <td><div class="prog-cell"><div class="prog-bg"><div class="prog-bar" style="width:${p}%;background:${fill};"></div></div><span class="prog-pct">${p}%</span></div></td>
     </tr>`;
-  }).join('')||`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px;">No CRs match the current filters</td></tr>`;
+  }).join('')||`<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px;">No CRs match the current filters</td></tr>`;
 }
 
 function renderNotesDisplay(c){
@@ -491,6 +527,7 @@ function openDetail(id){
   document.getElementById('dp-meta').innerHTML=[
     ['Priority',`<span class="badge ${priCls(c.priority)}">${c.priority}</span>`],
     ['Stage',`<span class="badge ${stageCls(c.stage)}">${c.stage}</span>`],
+    ['Assignee',`<span class="assignee-pill ${c.assignee?'':'unassigned'}">${escHtml(assigneeLabel(c.assignee))}</span>`],
     ['Progress',`${pct(c.stage)}% complete`],
     ['Delivery', c.planned ? formatDate(c.planned) : 'Not set'],
     ['UAT status',`<span class="badge ${c.uat==='Yes'?'b-done':'b-todo'}">${c.uat==='Yes'?'Signed off':'Pending'}</span>`],
@@ -523,12 +560,14 @@ function openDetail(id){
   document.getElementById('dp-uat').innerHTML=uatItems.map(u=>`<div class="uat-row"><div class="uat-check ${u.done?'uat-yes':'uat-no'}">${u.done?'✓':''}</div><div class="uat-txt">${u.label}</div><div class="uat-by">${u.by}</div></div>`).join('');
   // Edit fields
   document.getElementById('e-stage').value=c.stage;
+  document.getElementById('e-assignee').value=c.assignee||'';
   document.getElementById('e-priority').value=c.priority;
   document.getElementById('e-delivery').value=toInputDate(c.planned);
   document.getElementById('e-uat').value=c.uat;
   document.getElementById('e-notes').value='';
   renderNotesDisplay(c);
   renderDocsDisplay(c);
+  applyCRPermissions(c);
   const panel=document.getElementById('detail-panel');
   panel.classList.add('open');
   panel.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -538,7 +577,12 @@ function closeDetail(){ selId=null; document.getElementById('detail-panel').clas
 
 async function saveCREdit(){
   const c=CRS.find(x=>x.id===selId); if(!c) return;
-  c.stage=document.getElementById('e-stage').value;
+  if(!canUpdateCR(c)){ toast('You can update only CRs assigned to you.'); return; }
+  const oldAssignee = c.assignee || '';
+  const newAssignee = document.getElementById('e-assignee').value || '';
+  const newStage = document.getElementById('e-stage').value;
+  c.stage=newStage;
+  c.assignee=newAssignee;
   c.priority=document.getElementById('e-priority').value;
   c.planned=document.getElementById('e-delivery').value;
   c.uat=document.getElementById('e-uat').value;
@@ -552,6 +596,9 @@ async function saveCREdit(){
     }
     c.notes=newNote;
   }
+  if(newAssignee && normUserCR(newAssignee)!==normUserCR(oldAssignee)){
+    await createAssignmentNotification(newAssignee, c);
+  }
   await saveToStorage();
   renderStagePills();
   renderTable();
@@ -559,6 +606,7 @@ async function saveCREdit(){
   document.getElementById('dp-meta').innerHTML=[
     ['Priority',`<span class="badge ${priCls(c.priority)}">${c.priority}</span>`],
     ['Stage',`<span class="badge ${stageCls(c.stage)}">${c.stage}</span>`],
+    ['Assignee',`<span class="assignee-pill ${c.assignee?'':'unassigned'}">${escHtml(assigneeLabel(c.assignee))}</span>`],
     ['Progress',`${pct(c.stage)}% complete`],
     ['Delivery', c.planned ? formatDate(c.planned) : 'Not set'],
     ['UAT status',`<span class="badge ${c.uat==='Yes'?'b-done':'b-todo'}">${c.uat==='Yes'?'Signed off':'Pending'}</span>`],
@@ -582,6 +630,7 @@ async function saveCREdit(){
 
 async function deleteCR(){
   const c=CRS.find(x=>x.id===selId); if(!c) return;
+  if(!canDeleteCurrentCR()){ toast('Only Admin/Editor can delete CRs.'); return; }
   if(!confirm(`Delete "${c.id} — ${c.title}"?\n\nThis cannot be undone.`)) return;
   CRS=CRS.filter(x=>x.id!==selId);
   selId=null;
@@ -594,6 +643,7 @@ async function deleteCR(){
 async function attachDocument(e){
   const file=e.target.files[0]; if(!file) return;
   const c=CRS.find(x=>x.id===selId); if(!c) return;
+  if(!canUpdateCR(c)){ toast('You can attach documents only for CRs assigned to you.'); e.target.value=''; return; }
   if(file.size>5*1024*1024){ toast('⚠ File too large (max 5MB)'); e.target.value=''; return; }
   const reader=new FileReader();
   reader.onload=async ev=>{
@@ -607,7 +657,7 @@ async function attachDocument(e){
   e.target.value='';
 }
 function downloadDoc(crId,idx){ const c=CRS.find(x=>x.id===crId); if(!c||!c.docs||!c.docs[idx]) return; const a=document.createElement('a'); a.href=c.docs[idx].data; a.download=c.docs[idx].name; a.click(); }
-async function deleteDoc(crId,idx){ const c=CRS.find(x=>x.id===crId); if(!c||!c.docs||!c.docs[idx]) return; if(!confirm(`Remove "${c.docs[idx].name}" from this CR?`)) return; c.docs.splice(idx,1); await saveToStorage(); renderDocsDisplay(c); toast('🗑 Document removed'); }
+async function deleteDoc(crId,idx){ const c=CRS.find(x=>x.id===crId); if(!c||!c.docs||!c.docs[idx]) return; if(!canUpdateCR(c)){ toast('You can remove documents only for CRs assigned to you.'); return; } if(!confirm(`Remove "${c.docs[idx].name}" from this CR?`)) return; c.docs.splice(idx,1); await saveToStorage(); renderDocsDisplay(c); toast('🗑 Document removed'); }
 
 function toggleAddForm(){ document.getElementById('add-form').classList.toggle('open'); }
 async function saveCR(){
@@ -619,6 +669,7 @@ async function saveCR(){
     id,title,
     priority:document.getElementById('nc-pri').value,
     stage:document.getElementById('nc-stage').value,
+    assignee:document.getElementById('nc-assignee').value||'',
     requester:document.getElementById('nc-requester').value||'—',
     planned:document.getElementById('nc-delivery').value||'',
     uat:'No',uatBy:'',notes:'',
@@ -626,15 +677,19 @@ async function saveCR(){
     prev:'—',newCfg:'—'
   });
   ['nc-id','nc-title','nc-requester','nc-delivery','nc-desc'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('nc-assignee').value='';
   document.getElementById('add-form').classList.remove('open');
-  await saveToStorage(); renderStagePills(); renderTable();
+  await saveToStorage();
+  const created = CRS[0];
+  if(created.assignee){ await createAssignmentNotification(created.assignee, created); }
+  renderStagePills(); renderTable();
   toast('✓ New CR added');
 }
 
 function exportCSV(){
   const esc=v=>{ const s=String(v==null?'':v).replace(/"/g,'""'); return (s.includes(',')||s.includes('\n')||s.includes('"'))?`"${s}"`:s; };
-  const headers=['CR ID','Title','Description','Requester','Priority','Stage','Progress (%)','Expected Delivery','UAT Sign-off','UAT By','Previous Config','New Config / Logic','Notes'];
-  const rows=CRS.map(c=>[c.id,c.title,c.desc,c.requester,c.priority,c.stage,pct(c.stage),c.planned||'',c.uat,c.uatBy||'',c.prev||'',c.newCfg||'',Array.isArray(c.notesLog)?c.notesLog.map(n=>`[${n.ts}] ${n.text}`).join(' | '):(c.notes||'')]);
+  const headers=['CR ID','Title','Description','Requester','Assignee','Priority','Stage','Progress (%)','Expected Delivery','UAT Sign-off','UAT By','Previous Config','New Config / Logic','Notes'];
+  const rows=CRS.map(c=>[c.id,c.title,c.desc,c.requester,assigneeLabel(c.assignee),c.priority,c.stage,pct(c.stage),c.planned||'',c.uat,c.uatBy||'',c.prev||'',c.newCfg||'',Array.isArray(c.notesLog)?c.notesLog.map(n=>`[${n.ts}] ${n.text}`).join(' | '):(c.notes||'')]);
   const csv=[headers,...rows].map(r=>r.map(esc).join(',')).join('\n');
   const sumRows=[['Total CRs',CRS.length],['High Priority',CRS.filter(c=>c.priority==='High').length],['Medium Priority',CRS.filter(c=>c.priority==='Medium').length],['Low Priority',CRS.filter(c=>c.priority==='Low').length],['',''],...STAGES.map(s=>[`Stage: ${s}`,CRS.filter(c=>c.stage===s).length]),['Stage: On Hold',CRS.filter(c=>c.stage==='On Hold').length],['',''],['UAT Signed Off',CRS.filter(c=>c.uat==='Yes').length],['UAT Pending',CRS.filter(c=>c.uat==='No').length]];
   const csv2='\n\n--- SUMMARY ---\n'+[['Metric','Count'],...sumRows].map(r=>r.map(esc).join(',')).join('\n');
@@ -679,6 +734,119 @@ async function userCanOpenProjectCR(user,projectId){
   return ids.includes('__all__') || ids.includes(projectId);
 }
 
+async function loadAssigneeOptions(){
+  let users=[];
+  try{ users = await sbGet('users','select=username,name,role,status'); }catch(e){ users=[]; }
+  if(!Array.isArray(users)) users=[];
+  const access = await loadProjectAccessCR();
+  ASSIGNEE_USERS = users.filter(u=>{
+    const uname = normUserCR(u.username);
+    if(!uname) return false;
+    if(uname==='narendra' || u.role==='admin') return true;
+    const ids = access[uname] || [];
+    return ids.includes('__all__') || ids.includes(PROJECT_ID);
+  });
+  if(CURRENT_USER && !ASSIGNEE_USERS.some(u=>normUserCR(u.username)===normUserCR(CURRENT_USER.username))){
+    ASSIGNEE_USERS.push({username:CURRENT_USER.username,name:CURRENT_USER.name||CURRENT_USER.username,role:CURRENT_USER.role||'viewer'});
+  }
+  const opts = '<option value="">Assignee: Unassigned</option>' + ASSIGNEE_USERS.map(u=>`<option value="${escHtml(u.username)}">${escHtml(u.name||u.username)}</option>`).join('');
+  ['nc-assignee','e-assignee'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=opts; });
+  const f=document.getElementById('f-assignee');
+  if(f){ f.innerHTML='<option value="">All assignees</option><option value="__unassigned__">Unassigned</option>' + ASSIGNEE_USERS.map(u=>`<option value="${escHtml(u.username)}">${escHtml(u.name||u.username)}</option>`).join(''); }
+}
+
+async function createAssignmentNotification(username, cr){
+  if(!username || !cr) return;
+  const by = CURRENT_USER ? (CURRENT_USER.name || CURRENT_USER.username) : 'Someone';
+  try{
+    await sbUpsert('notifications',{
+      username: username,
+      project_id: PROJECT_ID,
+      cr_id: cr.id,
+      message: `${cr.id} assigned to you by ${by}`,
+      is_read: false,
+      created_at: new Date().toISOString()
+    });
+  }catch(e){ console.warn('Notification save failed', e); }
+}
+
+async function loadNotifications(){
+  if(!CURRENT_USER) return;
+  try{
+    const q='username=eq.'+encodeURIComponent(CURRENT_USER.username)+'&select=id,message,created_at,cr_id,is_read&order=created_at.desc&limit=10';
+    const rows=await sbGet('notifications',q);
+    NOTIFICATIONS=Array.isArray(rows)?rows:[];
+  }catch(e){ NOTIFICATIONS=[]; }
+
+  const wrap=document.getElementById('notif-wrap');
+  const count=document.getElementById('notif-count');
+  const panel=document.getElementById('notif-panel');
+  if(wrap) wrap.style.display='inline-flex';
+
+  const unread=NOTIFICATIONS.filter(n=>!n.is_read).length;
+  if(count){
+    count.textContent=unread>99?'99+':String(unread);
+    count.style.display=unread>0?'inline-flex':'none';
+  }
+  const btn=document.getElementById('notif-btn');
+  if(btn) btn.classList.toggle('has', unread>0);
+
+  if(panel){
+    panel.innerHTML = renderNotificationsPanel(NOTIFICATIONS, unread);
+  }
+}
+
+function renderNotificationsPanel(rows, unread){
+  if(!rows || !rows.length){
+    return `<div class="notif-head"><span>🔔 Notifications</span><span>0 unread</span></div><div class="notif-empty">No notifications yet</div>`;
+  }
+  return `<div class="notif-head"><span>🔔 Last 10 notifications</span><span>${unread} unread</span></div>` + rows.map(n=>{
+    const crId = escHtml(n.cr_id || '');
+    const msg = escHtml(n.message || 'Notification');
+    const when = n.created_at ? new Date(n.created_at).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    return `<div class="notif-item ${n.is_read?'':'unread'}" onclick="openNotification(${Number(n.id)}, '${crId}')">
+      <div class="notif-msg">${n.is_read?'':'● '}${msg}</div>
+      <div class="notif-meta">${escHtml(when)}${crId ? ' · '+crId : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleNotifications(){
+  const panel=document.getElementById('notif-panel');
+  if(!panel) return;
+  panel.classList.toggle('open');
+}
+
+async function openNotification(id, crId){
+  try{ await sbUpdate('notifications',{is_read:true},'id=eq.'+encodeURIComponent(id)); }catch(e){}
+  await loadNotifications();
+  const panel=document.getElementById('notif-panel');
+  if(panel) panel.classList.remove('open');
+  if(crId){
+    const exists = CRS.some(c=>String(c.id)===String(crId));
+    if(exists){ openDetail(crId); }
+    else { toast('CR not found in this project'); }
+  }
+}
+
+// Close notification panel when clicking outside
+window.addEventListener('click', function(e){
+  const wrap=document.getElementById('notif-wrap');
+  const panel=document.getElementById('notif-panel');
+  if(wrap && panel && !wrap.contains(e.target)) panel.classList.remove('open');
+});
+
+function applyCRPermissions(cr){
+  const allowed = canUpdateCR(cr);
+  const delAllowed = canDeleteCurrentCR();
+  const editWrap=document.querySelector('.edit-wrap');
+  const docRow=document.querySelector('.doc-upload-row');
+  const delBtn=document.querySelector('.btn-delete');
+  if(editWrap) editWrap.style.display = allowed ? 'block' : 'none';
+  if(docRow) docRow.style.display = allowed ? 'flex' : 'none';
+  if(delBtn) delBtn.style.display = delAllowed ? 'inline-flex' : 'none';
+}
+
 
 function doLogout(){ localStorage.removeItem(SESSION_KEY_CR); window.location.href='login.html'; }
 
@@ -692,6 +860,7 @@ async function requestEditAccess(){
 
 function applyPermissions(role){
   const canEdit = role==='admin' || role==='editor';
+  PROJECT_CAN_EDIT = canEdit;
   // Hide/show edit controls
   ['new-cr-btn','req-edit-btn'].forEach(id=>{
     const el=document.getElementById(id);
@@ -707,12 +876,6 @@ function applyPermissions(role){
       }
     }
   });
-  // Hide save/delete/edit buttons if viewer — we do this after render via CSS
-  if(!canEdit){
-    const style=document.createElement('style');
-    style.textContent='.edit-wrap{display:none!important;}.btn-delete{display:none!important;}.doc-upload-row{display:none!important;}';
-    document.head.appendChild(style);
-  }
 }
 
 // Init
@@ -721,6 +884,7 @@ function applyPermissions(role){
   let crSession = getSessionCR();
   if(!crSession || !crSession.username){ window.location.href='login.html'; return; }
   if(normUserCR(crSession.username)==='narendra' && crSession.role!=='admin'){ crSession.role='admin'; localStorage.setItem(SESSION_KEY_CR,JSON.stringify(crSession)); }
+  CURRENT_USER = crSession;
   if(!(await userCanOpenProjectCR(crSession,PROJECT_ID))){ alert('Admin has not given you access to this project.'); window.location.href='index.html'; return; }
 
   // Show user info
@@ -730,6 +894,8 @@ function applyPermissions(role){
   else if(crSession.role==='editor'){ rb.textContent='Editor'; rb.style.background='#f0fdf4'; rb.style.color='var(--green)'; }
   else { rb.textContent='Viewer'; rb.style.background='#f8fafc'; rb.style.color='var(--muted)'; }
   applyPermissions(crSession.role);
+  await loadAssigneeOptions();
+  await loadNotifications();
 
   // Set page title
   if(activeProject && activeProject.name){
@@ -740,7 +906,7 @@ function applyPermissions(role){
   document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
   // Show loading
-  document.getElementById('cr-tbody').innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">⏳ Loading CRs...</td></tr>`;
+  document.getElementById('cr-tbody').innerHTML=`<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:32px;">⏳ Loading CRs...</td></tr>`;
 
   // Load CRs from Supabase
   const isRMS = !activeProject.id || activeProject.id === 'rms';
