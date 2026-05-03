@@ -306,9 +306,9 @@ const STAGE_SH  = ['Req','Vendor','Dev','QA','UAT','Go Live'];
 const STAGE_IDX = Object.fromEntries(STAGES.map((s,i)=>[s,i]));
 const STAGE_CLS = ['b-req','b-ven','b-dev','b-qa','b-uat','b-gl'];
 const SPILL_CLS = ['sp0','sp1','sp2','sp3','sp4','sp5'];
-const STORAGE_KEY = 'vatsal_cr_v4';
 const activeProject = (()=>{ try{ return JSON.parse(localStorage.getItem('narendra_active_project')||'{}'); }catch(e){ return {}; } })();
 const PROJECT_ID = activeProject.id || 'rms';
+const STORAGE_KEY = 'cr_data_' + (PROJECT_ID || 'rms');
 
 
 const DEFAULT_CRS = [
@@ -657,6 +657,27 @@ function getSessionCR(){ try{ return JSON.parse(localStorage.getItem(SESSION_KEY
 function getUsersCR(){ try{ const r=localStorage.getItem(USERS_KEY_CR); if(r){const u=JSON.parse(r);if(Array.isArray(u)&&u.length>0)return u;} }catch(e){} return [{username:'Narendra',password:'Narendra@21',name:'Narendra',role:'admin',status:'active',requestedEdit:false}]; }
 function saveUsersCR(u){ try{localStorage.setItem(USERS_KEY_CR,JSON.stringify(u));}catch(e){} }
 
+const ACCESS_KEY_CR = 'narendra_project_access_v1';
+function normUserCR(u){ return String(u||'').trim().toLowerCase(); }
+function isSuperAdminCR(user){ return user && (user.role==='admin' || normUserCR(user.username)==='narendra'); }
+async function loadProjectAccessCR(){
+  try{
+    const rows=await sbGet('project_crs','project_id=eq.__project_access__&select=crs');
+    if(rows&&rows.length>0&&rows[0].crs&&typeof rows[0].crs==='object'){
+      localStorage.setItem(ACCESS_KEY_CR,JSON.stringify(rows[0].crs));
+      return rows[0].crs;
+    }
+  }catch(e){}
+  try{ return JSON.parse(localStorage.getItem(ACCESS_KEY_CR)||'{}'); }catch(e){ return {}; }
+}
+async function userCanOpenProjectCR(user,projectId){
+  if(isSuperAdminCR(user)) return true;
+  const access=await loadProjectAccessCR();
+  const ids=access[normUserCR(user.username)]||[];
+  return ids.includes('__all__') || ids.includes(projectId);
+}
+
+
 function doLogout(){ localStorage.removeItem(SESSION_KEY_CR); window.location.href='login.html'; }
 
 async function requestEditAccess(){
@@ -695,8 +716,10 @@ function applyPermissions(role){
 // Init
 (async function(){
   // Check session first
-  const crSession = getSessionCR();
+  let crSession = getSessionCR();
   if(!crSession || !crSession.username){ window.location.href='login.html'; return; }
+  if(normUserCR(crSession.username)==='narendra' && crSession.role!=='admin'){ crSession.role='admin'; localStorage.setItem(SESSION_KEY_CR,JSON.stringify(crSession)); }
+  if(!(await userCanOpenProjectCR(crSession,PROJECT_ID))){ alert('Admin has not given you access to this project.'); window.location.href='index.html'; return; }
 
   // Show user info
   document.getElementById('cr-user-name').textContent = crSession.name || crSession.username;

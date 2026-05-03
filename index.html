@@ -248,6 +248,7 @@ async function sbUpdate(t,d,f){try{const r=await fetch(SUPA_URL+"/rest/v1/"+t+"?
 // ── Constants ─────────────────────────────────────────────────────────────────
 const SESSION_KEY = 'narendra_hub_session';
 const PROJ_KEY = 'narendra_projects_v1';
+const ACCESS_KEY = 'narendra_project_access_v1';
 const DEFAULT_PROJECTS = [
   {id:'rms',name:'RMS Development',desc:'Risk Management System — margin, MTF, collateral, SQ off and related CRs.',icon:'🔍',color:'#2563eb'},
   {id:'middleware',name:'Middleware',desc:'Middleware layer CRs — API integrations, data flow, and vendor connectivity.',icon:'🔗',color:'#7c3aed'},
@@ -259,10 +260,48 @@ const DEFAULT_USERS = [
   {username:'viewer',password:'View@123',name:'Guest Viewer',role:'viewer',status:'active',requested_edit:false,dob:'2000-01-01'}
 ];
 let PROJECTS = [];
+let PROJECT_ACCESS = {}; // username(lowercase) -> ['project_id'] or ['__all__']
 
 // ── Session ───────────────────────────────────────────────────────────────────
 function getSession(){ try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch(e){return null;} }
 function doLogout(){ localStorage.removeItem(SESSION_KEY); window.location.href='login.html'; }
+
+// ── Project Access Control ───────────────────────────────────────────────────
+function normUser(u){ return String(u||'').trim().toLowerCase(); }
+function isSuperAdmin(user){ return user && (user.role==='admin' || normUser(user.username)==='narendra'); }
+function adminAllAccess(){ PROJECT_ACCESS[normUser('Narendra')] = ['__all__']; }
+async function loadProjectAccess(){
+  adminAllAccess();
+  try{
+    const rows = await sbGet('project_crs','project_id=eq.__project_access__&select=crs');
+    if(rows&&rows.length>0&&rows[0].crs&&typeof rows[0].crs==='object'){
+      PROJECT_ACCESS = rows[0].crs;
+      adminAllAccess();
+      localStorage.setItem(ACCESS_KEY,JSON.stringify(PROJECT_ACCESS));
+      return;
+    }
+  }catch(e){}
+  try{
+    const raw=localStorage.getItem(ACCESS_KEY);
+    if(raw){ PROJECT_ACCESS=JSON.parse(raw)||{}; adminAllAccess(); return; }
+  }catch(e){}
+  adminAllAccess();
+  await saveProjectAccess();
+}
+async function saveProjectAccess(){
+  adminAllAccess();
+  try{ await sbUpsert('project_crs',{project_id:'__project_access__',crs:PROJECT_ACCESS,updated_at:new Date().toISOString()}); }catch(e){}
+  try{ localStorage.setItem(ACCESS_KEY,JSON.stringify(PROJECT_ACCESS)); }catch(e){}
+}
+function getAllowedProjectIds(user){
+  if(isSuperAdmin(user)) return PROJECTS.map(p=>p.id);
+  const ids = PROJECT_ACCESS[normUser(user.username)] || [];
+  if(ids.includes('__all__')) return PROJECTS.map(p=>p.id);
+  return ids;
+}
+function canViewProject(user,projectId){ return getAllowedProjectIds(user).includes(projectId); }
+function visibleProjects(){ const s=getSession(); return PROJECTS.filter(p=>canViewProject(s,p.id)); }
+
 
 // ── Projects ──────────────────────────────────────────────────────────────────
 async function loadProjects(){
@@ -303,9 +342,11 @@ function barColor(p){ return p>=80?'#16a34a':p>=40?'#2563eb':'#d97706'; }
 // ── Render Projects ───────────────────────────────────────────────────────────
 async function renderProjects(){
   const grid=document.getElementById('projects-grid');
+  const session=getSession();
+  const list=visibleProjects();
   grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:32px;font-size:13px;">⏳ Loading projects...</div>';
   let totalCRs=0,inProgress=0,goLive=0;
-  const cards=await Promise.all(PROJECTS.map(async proj=>{
+  const cards=await Promise.all(list.map(async proj=>{
     const crs=await getCRsForProject(proj.id);
     const total=crs.length,done=crs.filter(c=>c.stage==='Go Live').length;
     const active=crs.filter(c=>c.stage!=='Go Live'&&c.stage!=='On Hold').length;
@@ -333,14 +374,17 @@ async function renderProjects(){
       <div class="proj-tags">${tags}</div>
     </div>`;
   }));
-  grid.innerHTML=cards.join('')+`<div class="proj-card-add" onclick="openModal()"><div class="add-icon">＋</div><div class="add-txt">Add New Project</div></div>`;
-  document.getElementById('s-projects').textContent=PROJECTS.length;
+  const addCard=isSuperAdmin(session)?`<div class="proj-card-add" onclick="openModal()"><div class="add-icon">＋</div><div class="add-txt">Add New Project</div></div>`:'';
+  grid.innerHTML=(cards.join('')||'<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:32px;font-size:13px;background:#fff;border:1px solid var(--border);border-radius:14px;">🔒 No projects assigned yet. Please contact Admin.</div>')+addCard;
+  document.getElementById('s-projects').textContent=list.length;
   document.getElementById('s-crs').textContent=totalCRs;
   document.getElementById('s-inprogress').textContent=inProgress;
   document.getElementById('s-done').textContent=goLive;
 }
 
 function openProject(id){
+  const session=getSession();
+  if(!canViewProject(session,id)){ toast('🔒 Admin has not given you access to this project'); return; }
   const proj=PROJECTS.find(p=>p.id===id); if(!proj) return;
   localStorage.setItem('narendra_active_project',JSON.stringify({id:proj.id,name:proj.name,icon:proj.icon,color:proj.color}));
   window.location.href='index2.html?project='+proj.id;
@@ -393,6 +437,27 @@ async function saveProject(){
 function openAdminPanel(){ renderAdminPanel(); document.getElementById('admin-modal').style.display='flex'; }
 function closeAdminPanel(){ document.getElementById('admin-modal').style.display='none'; }
 
+
+function projectChecksForUser(u){
+  if(u.role==='admin' || normUser(u.username)==='narendra') return '<div style="font-size:11px;color:var(--accent);font-weight:700;margin-top:6px;">All projects access</div>';
+  const allowed=PROJECT_ACCESS[normUser(u.username)]||[];
+  return `<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">${PROJECTS.map(p=>{
+    const checked=allowed.includes(p.id)?'checked':'';
+    return `<label style="font-size:10px;color:var(--text);background:#fff;border:1px solid var(--border);padding:4px 7px;border-radius:10px;display:inline-flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" ${checked} onchange="toggleProjectRight('${u.username}','${p.id}',this.checked)"> ${p.name}</label>`;
+  }).join('')}</div>`;
+}
+async function toggleProjectRight(username,projectId,checked){
+  const key=normUser(username);
+  let ids=PROJECT_ACCESS[key]||[];
+  ids=ids.filter(x=>x!=='__all__');
+  if(checked && !ids.includes(projectId)) ids.push(projectId);
+  if(!checked) ids=ids.filter(x=>x!==projectId);
+  PROJECT_ACCESS[key]=ids;
+  await saveProjectAccess();
+  renderProjects();
+  toast(checked?'✓ Project access granted':'✓ Project access removed');
+}
+
 async function renderAdminPanel(){
   const pr=document.getElementById('pending-requests'),al=document.getElementById('all-users-list'),cb=document.getElementById('user-count-badge');
   pr.innerHTML=al.innerHTML='<div style="font-size:12px;color:var(--muted);padding:8px 0;">Loading...</div>';
@@ -422,6 +487,7 @@ async function renderAdminPanel(){
         <span style="font-size:11px;font-weight:700;color:${roleColor(u.role)};">${roleLabel(u.role)}</span>
         ${u.requested_edit?'<span style="font-size:10px;color:var(--amber);background:#fffbeb;padding:2px 7px;border-radius:10px;">Edit Requested</span>':''}
       </div>
+      ${projectChecksForUser(u)}
     </div>
     ${u.username.toLowerCase()===session.username.toLowerCase()
       ?'<span style="font-size:10px;color:var(--accent);font-weight:700;background:#eff6ff;padding:3px 10px;border-radius:10px;">YOU</span>'
@@ -438,7 +504,7 @@ async function renderAdminPanel(){
 
 async function approveEdit(username){ await sbUpdate('users',{role:'editor',requested_edit:false},'username=eq.'+username.toLowerCase()); renderAdminPanel(); toast('✓ Edit access granted'); }
 async function declineEdit(username){ await sbUpdate('users',{requested_edit:false},'username=eq.'+username.toLowerCase()); renderAdminPanel(); toast('✕ Request declined'); }
-async function changeRole(username,newRole){ await sbUpdate('users',{role:newRole,requested_edit:false},'username=eq.'+username.toLowerCase()); renderAdminPanel(); toast('✓ Role updated'); }
+async function changeRole(username,newRole){ if(newRole==='admin') PROJECT_ACCESS[normUser(username)]=['__all__']; else if((PROJECT_ACCESS[normUser(username)]||[]).includes('__all__')) PROJECT_ACCESS[normUser(username)]=[]; await saveProjectAccess(); await sbUpdate('users',{role:newRole,requested_edit:false},'username=eq.'+username.toLowerCase()); renderAdminPanel(); renderProjects(); toast('✓ Role updated'); }
 async function adminResetPassword(username){
   const p=prompt('Set new password for @'+username+':');
   if(!p||p.length<6){ toast('⚠ Min 6 characters'); return; }
@@ -450,8 +516,9 @@ function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 (async function(){
-  const session=getSession();
+  let session=getSession();
   if(!session||!session.username){ window.location.href='login.html'; return; }
+  if(normUser(session.username)==='narendra' && session.role!=='admin'){ session.role='admin'; localStorage.setItem(SESSION_KEY,JSON.stringify(session)); }
   document.getElementById('user-name').textContent=session.name||session.username;
   const rb=document.getElementById('user-role-badge');
   if(session.role==='admin'){ rb.textContent='Admin'; rb.style.background='#eff6ff'; rb.style.color='var(--accent)'; document.getElementById('admin-btn').style.display='block'; document.body.classList.add('is-admin'); }
@@ -459,6 +526,7 @@ function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg
   else{ rb.textContent='Viewer'; rb.style.background='#f8fafc'; rb.style.color='var(--muted)'; }
   document.getElementById('top-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short',year:'numeric'});
   await loadProjects();
+  await loadProjectAccess();
   renderProjects();
 })();
 </script>
