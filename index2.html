@@ -53,7 +53,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .notif-btn{background:#fff;border:1.5px solid var(--border);color:var(--text);font-size:12px;font-weight:700;padding:7px 12px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;position:relative;}
 .notif-btn.has{background:#fff7ed;border-color:#fed7aa;color:#c2410c;}
 .notif-count{position:absolute;top:-7px;right:-7px;background:#dc2626;color:#fff;font-size:10px;font-weight:800;min-width:17px;height:17px;border-radius:999px;display:none;align-items:center;justify-content:center;padding:0 5px;line-height:17px;border:2px solid #fff;}
-.notif-panel{display:none;position:absolute;right:0;top:42px;width:340px;max-height:380px;overflow:auto;background:#fff;border:1.5px solid var(--border);border-radius:12px;box-shadow:0 12px 40px rgba(15,23,42,.18);z-index:1000;}
+.notif-panel{display:none;position:absolute;left:0;right:auto;top:42px;width:340px;max-width:calc(100vw - 24px);max-height:380px;overflow:auto;background:#fff;border:1.5px solid var(--border);border-radius:12px;box-shadow:0 12px 40px rgba(15,23,42,.18);z-index:9999;}
 .notif-panel.open{display:block;}
 .notif-head{padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:800;color:var(--text);display:flex;align-items:center;justify-content:space-between;}
 .notif-item{padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;background:#fff;transition:background .12s;}
@@ -118,6 +118,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .note-entry{background:#fffbeb;border-left:3px solid var(--amber);border-radius:0 7px 7px 0;padding:9px 12px;margin-bottom:8px;}
 .note-entry .note-text{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;word-break:break-word;}
 .note-entry .note-meta{font-size:10px;color:var(--muted);margin-top:5px;}
+.mention-tag{color:#2563eb;font-weight:800;background:#eff6ff;border:1px solid #bfdbfe;padding:1px 5px;border-radius:999px;white-space:nowrap;}
 /* Documents */
 .doc-upload-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
 .btn-upload{background:#f0f7ff;color:var(--accent);border-color:#bfdbfe;cursor:pointer;font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1.5px solid #bfdbfe;display:inline-flex;align-items:center;gap:6px;transition:all .15s;}
@@ -300,7 +301,7 @@ async function sbUpdate(t,d,f){try{const r=await fetch(SUPA_URL+"/rest/v1/"+t+"?
       <input type="date" id="e-delivery"/>
       <select id="e-uat"><option value="No">UAT: Pending</option><option value="Yes">UAT: Signed Off</option></select>
     </div>
-    <textarea class="notes-ta" id="e-notes" placeholder="Type a new note or follow-up action... (each save adds a timestamped entry above)"></textarea>
+    <textarea class="notes-ta" id="e-notes" placeholder="Type note/comment... Use @username to tag someone (example: @onkar please check this)"></textarea>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <button class="btn btn-primary" onclick="saveCREdit()">Save changes</button>
       <button class="btn" onclick="closeDetail()">Cancel</button>
@@ -415,6 +416,44 @@ function isOverdue(cr){ if(!cr.planned||cr.stage==='Go Live') return false; cons
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
 function escHtml(v){ return String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function assigneeLabel(v){ if(!v) return 'Unassigned'; const u=ASSIGNEE_USERS.find(x=>normUserCR(x.username)===normUserCR(v)); return (u && (u.name||u.username)) || v; }
+
+function formatMentionedText(text){
+  const safe = escHtml(text);
+  return safe.replace(/(^|\s)@([A-Za-z0-9_]+)/g, (match, prefix, uname) => `${prefix}<span class="mention-tag">@${uname}</span>`);
+}
+function extractMentionUsers(text){
+  const found = new Set();
+  String(text||'').replace(/@([A-Za-z0-9_.-]+)/g, (_, uname) => {
+    const normalized = normUserCR(uname);
+    const validUser = ASSIGNEE_USERS.find(u => {
+      const userName = normUserCR(u.username);
+      const displayName = normUserCR(u.name);
+      const compactName = displayName.replace(/\s+/g,'');
+      return userName === normalized || displayName === normalized || compactName === normalized;
+    });
+    if(validUser) found.add(normUserCR(validUser.username));
+    return '';
+  });
+  return [...found];
+}
+async function createMentionNotifications(usernames, cr){
+  if(!Array.isArray(usernames) || !usernames.length || !cr) return;
+  const by = CURRENT_USER ? (CURRENT_USER.name || CURRENT_USER.username) : 'Someone';
+  const sender = CURRENT_USER ? normUserCR(CURRENT_USER.username) : '';
+  for(const username of usernames){
+    if(!username || normUserCR(username) === sender) continue;
+    try{
+      await sbUpsert('notifications',{
+        username: normUserCR(username),
+        project_id: PROJECT_ID,
+        cr_id: cr.id,
+        message: `${by} mentioned you in ${cr.id}`,
+        is_read: false,
+        created_at: new Date().toISOString()
+      });
+    }catch(e){ console.warn('Mention notification failed', e); }
+  }
+}
 function canUpdateCR(cr){ return PROJECT_CAN_EDIT || (!!cr && !!CURRENT_USER && normUserCR(cr.assignee)===normUserCR(CURRENT_USER.username)); }
 function canDeleteCurrentCR(){ return PROJECT_CAN_EDIT; }
 
@@ -494,7 +533,7 @@ function renderNotesDisplay(c){
   const el=document.getElementById('dp-notes-display'); if(!el) return;
   const log=Array.isArray(c.notesLog)?c.notesLog:(c.notes?[{text:c.notes,ts:'Previously saved'}]:[]);
   if(!log.length){ el.innerHTML=`<div class="notes-empty">No notes yet — add one below and click Save changes.</div>`; return; }
-  el.innerHTML=[...log].reverse().map(n=>`<div class="note-entry"><div class="note-text">${n.text.replace(/</g,'&lt;')}</div><div class="note-meta">🕐 ${n.ts}</div></div>`).join('');
+  el.innerHTML=[...log].reverse().map(n=>`<div class="note-entry"><div class="note-text">${formatMentionedText(n.text)}</div><div class="note-meta">🕐 ${n.ts}</div></div>`).join('');
 }
 
 function renderDocsDisplay(c){
@@ -588,7 +627,9 @@ async function saveCREdit(){
   c.uat=document.getElementById('e-uat').value;
   const newNote=document.getElementById('e-notes').value.trim();
   if(!Array.isArray(c.notesLog)) c.notesLog=[];
+  let mentionedUsers=[];
   if(newNote){
+    mentionedUsers = extractMentionUsers(newNote);
     const last=c.notesLog[c.notesLog.length-1];
     if(!last||last.text!==newNote){
       const now=new Date();
@@ -598,6 +639,9 @@ async function saveCREdit(){
   }
   if(newAssignee && normUserCR(newAssignee)!==normUserCR(oldAssignee)){
     await createAssignmentNotification(newAssignee, c);
+  }
+  if(mentionedUsers.length){
+    await createMentionNotifications(mentionedUsers, c);
   }
   await saveToStorage();
   renderStagePills();
@@ -760,7 +804,7 @@ async function createAssignmentNotification(username, cr){
   const by = CURRENT_USER ? (CURRENT_USER.name || CURRENT_USER.username) : 'Someone';
   try{
     await sbUpsert('notifications',{
-      username: username,
+      username: normUserCR(username),
       project_id: PROJECT_ID,
       cr_id: cr.id,
       message: `${cr.id} assigned to you by ${by}`,
@@ -773,7 +817,7 @@ async function createAssignmentNotification(username, cr){
 async function loadNotifications(){
   if(!CURRENT_USER) return;
   try{
-    const q='username=eq.'+encodeURIComponent(CURRENT_USER.username)+'&select=id,message,created_at,cr_id,is_read&order=created_at.desc&limit=10';
+    const q='username=eq.'+encodeURIComponent(normUserCR(CURRENT_USER.username))+'&select=id,message,created_at,cr_id,is_read&order=created_at.desc&limit=10';
     const rows=await sbGet('notifications',q);
     NOTIFICATIONS=Array.isArray(rows)?rows:[];
   }catch(e){ NOTIFICATIONS=[]; }
