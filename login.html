@@ -260,6 +260,22 @@ const SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 async function sbGet(table,q=''){try{const r=await fetch(SUPA_URL+'/rest/v1/'+table+'?'+q,{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});if(r.ok)return await r.json();}catch(e){}return null;}
 async function sbUpsert(table,data){try{const r=await fetch(SUPA_URL+'/rest/v1/'+table,{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},body:JSON.stringify(data)});return r.ok;}catch(e){return false;}}
 async function sbUpdate(table,data,filter){try{const r=await fetch(SUPA_URL+'/rest/v1/'+table+'?'+filter,{method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify(data)});return r.ok;}catch(e){return false;}}
+async function sbInsert(table,data){
+  try{
+    const r=await fetch(SUPA_URL+'/rest/v1/'+table,{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(data)});
+    if(!r.ok){ console.warn('Insert failed for '+table, await r.text()); }
+    return r.ok;
+  }catch(e){ console.warn('Insert exception for '+table, e); return false; }
+}
+async function captureLogin(username){
+  if(!username) return;
+  await sbInsert('login_history',{
+    username:String(username).trim().toLowerCase(),
+    user_agent:navigator.userAgent || '',
+    login_time:new Date().toISOString()
+  });
+}
+
 </script>
 <script>
 const SESSION_KEY = 'narendra_hub_session';
@@ -291,6 +307,7 @@ async function doLogin(){
   // Step 1: Check hardcoded defaults (always works)
   const def=DEFAULT_USERS.find(x=>x.username.toLowerCase()===u.toLowerCase()&&x.password===p);
   if(def){
+    await captureLogin(def.username);
     localStorage.setItem(SESSION_KEY,JSON.stringify({username:def.username,name:def.name,role:def.role,loginTime:Date.now()}));
     window.location.href='index.html'; return;
   }
@@ -301,6 +318,7 @@ async function doLogin(){
     if(rows&&rows.length>0){
       const user=rows[0];
       if(user.password!==p){ showErr('login-err','Invalid username or password.'); btn.disabled=false; btn.textContent='Sign In →'; return; }
+      await captureLogin(user.username);
       localStorage.setItem(SESSION_KEY,JSON.stringify({username:user.username,name:user.name,role:user.role,loginTime:Date.now()}));
       window.location.href='index.html'; return;
     }

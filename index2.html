@@ -197,6 +197,7 @@ async function sbUpdate(t,d,f){try{const r=await fetch(SUPA_URL+"/rest/v1/"+t+"?
       <span id="cr-user-name" style="font-weight:600;color:var(--text);"></span>
       <span id="cr-user-role" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;"></span>
     </div>
+    <div id="cr-last-login" style="display:flex;align-items:center;background:var(--surface2);border:1.5px solid var(--border);padding:6px 12px;border-radius:8px;font-size:11px;color:var(--muted);white-space:nowrap;">Last login: loading...</div>
     <div class="notif-wrap" id="notif-wrap" style="display:none;">
       <button id="notif-btn" onclick="toggleNotifications()" class="notif-btn">🔔 Notifications <span id="notif-count" class="notif-count">0</span></button>
       <div id="notif-panel" class="notif-panel"></div>
@@ -750,6 +751,21 @@ function handleImport(e){
   reader.readAsText(file); e.target.value='';
 }
 
+
+function fmtLoginTimeCR(ts){
+  if(!ts) return 'Never';
+  return new Date(ts).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+async function showCRLastLogin(username){
+  const el=document.getElementById('cr-last-login');
+  if(!el || !username) return;
+  try{
+    const rows=await sbGet('login_history','username=eq.'+encodeURIComponent(normUserCR(username))+'&select=login_time&order=login_time.desc&limit=2');
+    if(rows && rows.length>1) el.textContent='Last login: '+fmtLoginTimeCR(rows[1].login_time);
+    else el.textContent='Last login: First login';
+  }catch(e){ el.textContent='Last login: unavailable'; }
+}
+
 // ── Auth & Permissions ───────────────────────────────────────────────────────
 const SESSION_KEY_CR = 'narendra_hub_session';
 const USERS_KEY_CR   = 'narendra_hub_users_v1';
@@ -937,6 +953,7 @@ function applyPermissions(role){
   if(crSession.role==='admin'){ rb.textContent='Admin'; rb.style.background='#eff6ff'; rb.style.color='var(--accent)'; }
   else if(crSession.role==='editor'){ rb.textContent='Editor'; rb.style.background='#f0fdf4'; rb.style.color='var(--green)'; }
   else { rb.textContent='Viewer'; rb.style.background='#f8fafc'; rb.style.color='var(--muted)'; }
+  await showCRLastLogin(crSession.username);
   applyPermissions(crSession.role);
   await loadAssigneeOptions();
   await loadNotifications();

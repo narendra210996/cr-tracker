@@ -114,6 +114,7 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
         <span id="user-name" style="color:var(--text);font-weight:600;"></span>
         <span id="user-role-badge" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;"></span>
       </div>
+      <div id="last-login" style="background:var(--bg);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:11px;color:var(--muted);white-space:nowrap;">Last login: loading...</div>
       <button id="admin-btn" onclick="openAdminPanel()" style="display:none;background:#fff;border:1px solid var(--border);color:var(--accent);font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;cursor:pointer;font-family:inherit;transition:all .15s;">⚙ Admin</button>
       <button onclick="doLogout()" style="background:#fff;border:1px solid var(--border);color:var(--muted);font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;cursor:pointer;font-family:inherit;transition:all .15s;">Sign out</button>
     </div>
@@ -433,6 +434,30 @@ async function saveProject(){
   await saveProjects(); closeModal(); renderProjects(); toast('✓ Project added');
 }
 
+
+function fmtLoginTime(ts){
+  if(!ts) return 'Never';
+  return new Date(ts).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+async function getLoginRows(){
+  try{
+    const rows=await sbGet('login_history','select=username,login_time&order=login_time.desc');
+    return Array.isArray(rows)?rows:[];
+  }catch(e){ return []; }
+}
+async function showCurrentUserLastLogin(username){
+  const el=document.getElementById('last-login');
+  if(!el || !username) return;
+  const rows=await sbGet('login_history','username=eq.'+encodeURIComponent(normUser(username))+'&select=login_time&order=login_time.desc&limit=2');
+  if(rows && rows.length>1) el.textContent='Last login: '+fmtLoginTime(rows[1].login_time);
+  else el.textContent='Last login: First login';
+}
+function buildLatestLoginMap(rows){
+  const map={};
+  (rows||[]).forEach(r=>{ const u=normUser(r.username); if(u && !map[u]) map[u]=r.login_time; });
+  return map;
+}
+
 // ── Admin Panel ───────────────────────────────────────────────────────────────
 function openAdminPanel(){ renderAdminPanel(); document.getElementById('admin-modal').style.display='flex'; }
 function closeAdminPanel(){ document.getElementById('admin-modal').style.display='none'; }
@@ -468,6 +493,8 @@ async function renderAdminPanel(){
     if(rows&&rows.length>0) rows.forEach(r=>{ if(!DEFAULT_USERS.find(d=>d.username.toLowerCase()===r.username.toLowerCase())) users.push(r); });
   }catch(e){}
   if(cb) cb.textContent=`${users.length} user${users.length!==1?'s':''}`;
+  const loginRows=await getLoginRows();
+  const latestLoginMap=buildLatestLoginMap(loginRows);
   const pending=users.filter(u=>u.requested_edit&&u.role==='viewer');
   pr.innerHTML=!pending.length
     ?'<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px 0;">No pending requests</div>'
@@ -487,6 +514,7 @@ async function renderAdminPanel(){
         <span style="font-size:11px;font-weight:700;color:${roleColor(u.role)};">${roleLabel(u.role)}</span>
         ${u.requested_edit?'<span style="font-size:10px;color:var(--amber);background:#fffbeb;padding:2px 7px;border-radius:10px;">Edit Requested</span>':''}
       </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">🕒 Last login: ${fmtLoginTime(latestLoginMap[normUser(u.username)])}</div>
       ${projectChecksForUser(u)}
     </div>
     ${u.username.toLowerCase()===session.username.toLowerCase()
@@ -525,6 +553,7 @@ function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg
   else if(session.role==='editor'){ rb.textContent='Editor'; rb.style.background='#f0fdf4'; rb.style.color='var(--green)'; }
   else{ rb.textContent='Viewer'; rb.style.background='#f8fafc'; rb.style.color='var(--muted)'; }
   document.getElementById('top-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short',year:'numeric'});
+  await showCurrentUserLastLogin(session.username);
   await loadProjects();
   await loadProjectAccess();
   renderProjects();
